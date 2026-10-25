@@ -23,26 +23,47 @@ DATA_END = date.fromisoformat(config.DATA_END_DATE)
 AVAILABLE_YEARS = list(range(DATA_END.year, DATA_START.year - 1, -1))
 
 
-def render_period_selector() -> tuple[date, date, str]:
-    """Draw the sidebar control; return (start, end, label) - end is inclusive."""
+def render_period_selector() -> tuple[date, date, str, str]:
+    """Draw the sidebar control; return (start, end, label, mode) - end inclusive."""
     mode = st.sidebar.radio("Reporting period", MODES, index=0)
 
     if mode == MODE_ALL:
-        return DATA_START, DATA_END, f"All time ({DATA_START.year}\u2013{DATA_END.year})"
+        return DATA_START, DATA_END, f"All time ({DATA_START.year}\u2013{DATA_END.year})", mode
 
     if mode == MODE_YEAR:
         year = st.sidebar.selectbox("Calendar year", AVAILABLE_YEARS, index=0)
         start = date(year, 1, 1)
         end = min(date(year, 12, 31), DATA_END)
         label = f"{start.strftime('%b %Y')} \u2013 {end.strftime('%b %Y')}"
-        return start, end, label
+        return start, end, label, mode
 
     start = DATA_END - timedelta(days=364)
     return (
         start,
         DATA_END,
         f"Last 12 months ({start.strftime('%b %Y')} \u2013 {DATA_END.strftime('%b %Y')})",
+        mode,
     )
+
+
+def previous_period(start: date, end: date, mode: str) -> tuple[date, date] | None:
+    """The comparison window for YoY deltas.
+
+    Same calendar-span one year earlier (so a partial current year, capped at
+    the dataset end, is compared against the same span of the previous year -
+    Constitutional honesty over raw percentage). Returns None for All time
+    (there is no like-for-like earlier window in the dataset).
+    """
+    if mode == MODE_ALL:
+        return None
+
+    def shift_one_year(d: date) -> date:
+        try:
+            return date(d.year - 1, d.month, d.day)
+        except ValueError:  # Feb 29
+            return date(d.year - 1, d.month, 28)
+
+    return shift_one_year(start), shift_one_year(end)
 
 
 def period_params(start: date, end: date) -> tuple[date, date]:

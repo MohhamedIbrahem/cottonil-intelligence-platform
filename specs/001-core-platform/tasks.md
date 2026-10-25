@@ -47,13 +47,13 @@
 
 ## Phase 3: US2 Executive Overview (P2) 🎯 demo-able core
 
-- [ ] T040 Executive page KPI cards: Net Sales, Gross Profit (sum margin_EGP), Orders, Active Customers, Return Rate % with YoY deltas; metric-definition tooltips from AUDIT doc
-- [ ] T041 Monthly sales & profit trend line (period-aware)
-- [ ] T042 [P] Top-5 branches bar + governorate totals
-- [ ] T043 [P] Category mix donut + channel mix donut
-- [ ] T044 Data-note expander content per page (FR-012)
+- [x] T040 Executive page KPI cards: Net Sales, Gross Profit (sum margin_EGP), Orders, Active Customers, Return Rate % with YoY deltas; metric-definition tooltips from AUDIT doc
+- [x] T041 Monthly sales & profit trend line (period-aware)
+- [x] T042 [P] Top-5 branches bar + governorate totals
+- [x] T043 [P] Category mix donut + channel mix donut
+- [x] T044 Data-note expander content per page (FR-012)
 
-**Checkpoint**: deck p2 exists with real data
+**Checkpoint**: deck p2 exists with real data ✅ (2026-10-25: AppTest 0 exceptions in all 3 period modes; Last-12-months KPIs: net EGP 293.2M +36.3% YoY, GP EGP 112.4M, orders 100.3K, active customers 51.5K, return rate 5.3%)
 
 ## Phase 4: US3 Sales Performance (P3)
 

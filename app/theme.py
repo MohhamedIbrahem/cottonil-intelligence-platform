@@ -20,6 +20,8 @@ GOOD = "#2ECC71"
 BAD = "#EB5757"
 WARN = "#F2C94C"
 
+COLORS = [ACCENT_2, ACCENT, WARN, GOOD, BAD, "#9B51E0", "#F2994A"]
+
 CSS = f"""
 <style>
 [data-testid="stAppViewContainer"] {{ background-color: {NAVY_BG}; }}
@@ -94,7 +96,7 @@ def apply_plotly_style(fig) -> None:
         margin={"l": 10, "r": 10, "t": 28, "b": 10},
         legend={"orientation": "h", "y": -0.15},
         hovermode="x unified",
-        colorway=[ACCENT_2, ACCENT, WARN, GOOD, BAD, "#9B51E0", "#F2994A"],
+        colorway=COLORS,
     )
     fig.update_yaxes(gridcolor="rgba(143,166,201,0.15)")
     fig.update_xaxes(gridcolor="rgba(143,166,201,0.08)")
