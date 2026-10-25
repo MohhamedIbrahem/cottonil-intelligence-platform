@@ -44,6 +44,7 @@ class AskResult:
     refusal: bool = False
     error: str = ""                                     # non-empty on hard failure
     truncated: bool = False
+    provider: str = ""                                  # LLM that produced the SQL ("" = injected fn)
 
 
 def extract_sql(reply: str) -> str:
@@ -126,8 +127,17 @@ def ask(question: str, *, chat_fn=llm.chat, memory: list[dict[str, str]] | None 
         except llm.LLMError as exc:
             result.error = str(exc)
             return result
+        if chat_fn is llm.chat and llm.last_provider() is not None:
+            result.provider = llm.last_provider().name
 
         candidate = extract_sql(reply)
+        if not candidate and re.search(r"REFUSAL\s*:", reply or "", re.IGNORECASE):
+            # The model legally declined (prompt refusal contract): honor it as a
+            # refusal immediately instead of burning attempts on empty SQL.
+            result.attempts.append("model refusal: " + " ".join(reply.split())[:120])
+            result.refusal = True
+            result.narration = _REFUSAL_TEXT
+            return result
         try:
             sql = validate(candidate)
         except GuardError as exc:

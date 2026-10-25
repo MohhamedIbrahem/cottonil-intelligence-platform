@@ -1,7 +1,7 @@
 # Two-Minute Demo Script (feature 001)
 
 Audience: HVIA Task 3 reviewers. Screen: `uv run streamlit run app/Home.py` at fullscreen.
-Pre-roll (before recording): `uv run build` + `uv run checks`, Ollama running (`ollama serve`, model pulled), `uv run pytest -q` passed.
+Pre-roll (before recording): `uv run build` + `uv run checks`, `.env` holding `GEMINI_API_KEY`/`GROQ_API_KEY` in place (Gemini primary, Groq fallback), `uv run pytest -q` passed.
 
 | # | Seconds | Action | Say |
 |---|---------|--------|-----|

@@ -6,7 +6,7 @@ Language coverage: English + Arabic questions + refusal + out-of-scope pairs
 (T102's Arabic subset lives here too).
 
 Run live accuracy with the real LLM:
-    uv run pytest tests/test_goldset.py --no-header -q -s
+    uv run pytest tests/test_assistant.py -q -s
 Reports per-question verdicts and the accuracy percentage; the release gate is
 >= 80% (16/20).
 """

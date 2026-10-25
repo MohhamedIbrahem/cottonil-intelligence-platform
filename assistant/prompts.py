@@ -35,6 +35,12 @@ Reply with a single ```sql fenced block and NOTHING else (no prose, no explanati
   + your own LIMIT (<= 50 rows) inside the statement so the most relevant rows win.
 - No writes/DDL/meta commands (INSERT, UPDATE, DELETE, CREATE, ..., PRAGMA, SET, COPY).
 
+### Refusal contract
+- If the request is a write/DDL/meta action (INSERT, UPDATE, DELETE, CREATE, DROP, ...)
+  or not answerable from the allowed tables, reply with EXACTLY one line:
+  REFUSAL: <brief reason>
+  Never answer a refusal by selecting the refusal text as a column value.
+
 ### Column style reminders
 - Dates are DATE (order_date, return_date, start/end dates); month strings like '2026-10' are ym/year_month.
 - Names are Arabic (branch_name_ar, product_name_ar, governorate_ar, customer_name_ar):
@@ -57,7 +63,7 @@ Q: "Which campaigns spent the most?" ->
 ```sql
 SELECT campaign_id, channel, spend_egp FROM views.campaigns_clean
 ```
-Q: "delete old orders" -> no SQL block; the engine treats it as a refusal.
+Q: "delete old orders" -> REFUSAL: the database is read-only; deletes are not allowed.
 """
 
 

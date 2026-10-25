@@ -93,19 +93,31 @@ with st.sidebar:
     )
     st.caption(f"Goldset coverage: {len(goldset.GOLDSET)} question/invariant pairs "
                "run in `tests/test_assistant.py`.")
+    st.caption("Provider chain: " + " → ".join(llm.describe_providers()))
 
 if not st.session_state.get("assistant_llm_ready"):
     with st.spinner("Connecting to the assistant LLM…"):
         st.session_state.assistant_llm_ready = llm.probe()
 
 if not st.session_state.assistant_llm_ready:
-    st.warning(
-        f"The assistant LLM is not reachable at **{env.LLM_BASE_URL}** (model "
-        f"`{env.LLM_MODEL}`). Start one and reload this page:\n\n```\n"
-        "ollama serve\nollama pull llama3.1\n```\n\n"
-        "…or point `COTTONIL_LLM_BASE_URL` at any OpenAI-compatible server in `.env`.",
-        icon="🔌",
-    )
+    if env.PROVIDERS:
+        rows = "\n".join(
+            f"| {provider.name} | {'primary' if index == 0 else 'fallback'} | `{provider.model}` |"
+            for index, provider in enumerate(env.PROVIDERS)
+        )
+        st.warning(
+            "The assistant LLM is not reachable. Keys live in `.env` (gitignored) — "
+            "verify `GEMINI_API_KEY` / `GROQ_API_KEY` and reload this page.\n\n"
+            "| Provider | Role | Model |\n|---|---|---|\n" + rows,
+            icon="🔌",
+        )
+    else:
+        st.warning(
+            "No assistant LLM provider is configured. Add `GEMINI_API_KEY` + "
+            "`GEMINI_MODEL` (primary) and `GROQ_API_KEY` + `GROQ_MODEL` (fallback) "
+            "to `.env`, then reload this page.",
+            icon="🔌",
+        )
     st.stop()
 
 # ------------------------------------------------------- shortcut rail (T100) --
@@ -176,7 +188,7 @@ if pending:
         "narration": result.narration or result.error,
         "sql": result.sql, "df": result.df, "sources": result.sources,
         "truncated": result.truncated, "refusal": result.refusal,
-        "attempts": result.attempts,
+        "attempts": result.attempts, "provider": result.provider,
     })
     if result.df is None and result.sql == "" and not result.refusal:
         st.error(result.error, icon="🔌")
@@ -199,6 +211,10 @@ for index, message in enumerate(st.session_state.assistant_msgs):
             st.warning(narration, icon="🛑")
         else:
             st.markdown(narration)
+
+        provider = message.get("provider") or ""
+        if provider and (env.PRIMARY is None or provider != env.PRIMARY.name):
+            st.caption(f"via {provider} (fallback)")
 
         if message.get("truncated"):
             st.info("Result truncated at 200 rows.", icon="✂️")

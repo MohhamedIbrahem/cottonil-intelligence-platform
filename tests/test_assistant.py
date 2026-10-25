@@ -8,13 +8,15 @@ from __future__ import annotations
 
 import pathlib
 import sys
+import time
+from types import SimpleNamespace
 
 import pytest
 
 _ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_ROOT))
 
-from assistant import engine, goldset, llm, schema_docs
+from assistant import engine, env, goldset, llm, schema_docs
 from assistant.sql_guard import GuardError, deadline_wrap, referenced_tables, validate
 
 
@@ -131,6 +133,69 @@ def test_engine_surfaces_garbage_sql_as_refusal():
     assert result.df is None
 
 
+# ---------------------------------------------------------- provider chain ----
+FAKE_PRIMARY = env.LLMConfig(name="FakePrimary", base_url="http://x", model="m1", api_key="k")
+FAKE_FALLBACK = env.LLMConfig(name="FakeFallback", base_url="http://y", model="m2", api_key="k")
+
+
+def _fake_openai(content: str | None, fail_reason: str = ""):
+    """Stand-in for the OpenAI SDK client bound to one provider."""
+    if fail_reason:
+        def create(**_):
+            raise RuntimeError(fail_reason)
+    else:
+        def create(**_):
+            return SimpleNamespace(
+                choices=[SimpleNamespace(message=SimpleNamespace(content=content))])
+    return SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+
+
+def test_chat_falls_back_when_primary_fails(monkeypatch):
+    """Primary quota exhausted (429) -> the chain automatically uses the fallback."""
+    calls: list[str] = []
+
+    def client_for(provider, *, timeout=None):
+        calls.append(provider.name)
+        if provider.name == "FakePrimary":
+            return _fake_openai(None, fail_reason="[429] Quota exceeded")
+        return _fake_openai("fallback answer")
+
+    monkeypatch.setattr(env, "PROVIDERS", [FAKE_PRIMARY, FAKE_FALLBACK])
+    monkeypatch.setattr(llm, "client", client_for)
+    reply = llm.chat([{"role": "user", "content": "hi"}])
+    assert reply == "fallback answer"
+    assert calls == ["FakePrimary", "FakeFallback"]
+    assert llm.last_provider() is not None and llm.last_provider().name == "FakeFallback"
+
+
+def test_chat_treats_empty_content_as_failure(monkeypatch):
+    def client_for(provider, *, timeout=None):
+        return _fake_openai(None if provider is FAKE_PRIMARY else "second answer")
+
+    monkeypatch.setattr(env, "PROVIDERS", [FAKE_PRIMARY, FAKE_FALLBACK])
+    monkeypatch.setattr(llm, "client", client_for)
+    assert llm.chat([{"role": "user", "content": "hi"}]) == "second answer"
+
+
+def test_chat_raises_collecting_every_provider_reason(monkeypatch):
+    def client_for(provider, *, timeout=None):
+        return _fake_openai(None, fail_reason=f"boom in {provider.name}")
+
+    monkeypatch.setattr(env, "PROVIDERS", [FAKE_PRIMARY, FAKE_FALLBACK])
+    monkeypatch.setattr(llm, "client", client_for)
+    with pytest.raises(llm.LLMError) as excinfo:
+        llm.chat([{"role": "user", "content": "hi"}])
+    message = str(excinfo.value)
+    assert "FakePrimary" in message and "FakeFallback" in message
+    assert "boom in" in message
+
+
+def test_chat_without_any_provider_raises_setup_hint(monkeypatch):
+    monkeypatch.setattr(env, "PROVIDERS", [])
+    with pytest.raises(llm.LLMError, match="No assistant LLM provider"):
+        llm.chat([{"role": "user", "content": "hi"}])
+
+
 # -------------------------------------------------------------- goldset ------
 def test_goldset_is_wellformed():
     assert len(goldset.GOLDSET) == 20
@@ -154,23 +219,27 @@ def test_goldset_refusals_and_oos_pass_engine_contract():
 
 
 def test_goldset_live_accuracy_report():
-    """Runs the full 20-question goldset against the real LLM and print the table.
+    """Runs the full 20-question goldset against the live provider chain and print the table.
 
-    Skipped when the endpoint is down so `pytest` stays green on clean machines;
-    run with Ollama up for the release gate (>= 80%)."""
+    Skipped when the chain is unreachable so `pytest` stays green on clean machines;
+    run with Gemini/Groq keys in `.env` for the release gate (>= 80%)."""
     if not llm.probe():
-        pytest.skip("assistant LLM not reachable (start `ollama serve` to run the goldset)")
+        pytest.skip("assistant LLM chain unreachable — check `GEMINI_API_KEY` / "
+                    "`GROQ_API_KEY` in .env to run the goldset")
     engine_ask = engine.ask
-    rows: list[tuple[str, str, bool, str]] = []
+    rows: list[tuple[str, str, bool, str, str]] = []
     passed = 0
-    for case in goldset.GOLDSET:
+    for index, case in enumerate(goldset.GOLDSET):
+        if index:
+            time.sleep(9.5)  # free tiers ≈ 15 RPM (Gemini) / 30 RPM (Groq): pace the chain
         result = engine_ask(case.question)
         ok, why = case.checker(result)
         passed += int(ok)
-        rows.append((case.id, case.kind, ok, why))
-    print("\nGoldset report (real LLM):")
-    for id_, kind, ok, why in rows:
-        print(f"  {'✅' if ok else '❌'} {id_} [{kind}] {why}")
+        rows.append((case.id, case.kind, ok, why, result.provider))
+    print("\nGoldset report (live provider chain):")
+    for id_, kind, ok, why, provider in rows:
+        tag = f" via {provider}" if provider else ""
+        print(f"  {'✅' if ok else '❌'} {id_} [{kind}]{tag} {why}")
     accuracy = passed / len(rows)
     print(f"Accuracy: {passed}/{len(rows)} = {accuracy:.1%}")
     assert accuracy >= 0.80, f"goldset accuracy {accuracy:.1%} below release gate 80%"

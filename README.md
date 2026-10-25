@@ -25,15 +25,16 @@ uv run streamlit run app/Home.py   # the dashboard app (needs the build first)
 5. **Customers** — RFM tier table, top-LTV, profile mixes, customer lookup.
 6. **Assistant** — bilingual chat (EN/AR), every answer shows its SQL + sources, deep-link buttons.
 
-**Assistant LLM** (any OpenAI-compatible endpoint; default local Ollama):
+**Assistant LLM** (cloud provider chain — no local server needed):
+
+- **Primary:** Google **Gemini** — `GEMINI_API_KEY` + `GEMINI_MODEL` in `.env`
+- **Fallback:** **Groq** — `GROQ_API_KEY` + `GROQ_MODEL` in `.env`; used automatically when Gemini fails (quota exhausted, rate limit, outage)
 
 ```powershell
-ollama serve                 # if not already running
-ollama pull llama3.1         # or a stronger/Arabic-tuned model, e.g. qwen2.5:7b-instruct
-uv run streamlit run app/Home.py
+uv run streamlit run app/Home.py    # keys are read from .env on startup
 ```
 
-Optional `.env` (see `.env.example`): `COTTONIL_LLM_BASE_URL`, `COTTONIL_LLM_MODEL`, `COTTONIL_LLM_API_KEY`, `COTTONIL_SQL_TIMEOUT`.
+Optional `.env` overrides (see `.env.example`): `COTTONIL_LLM_BASE_URL/_MODEL/_API_KEY` (primary) and `COTTONIL_LLM_FALLBACK_*` (fallback), plus `COTTONIL_LLM_TIMEOUT`, `COTTONIL_SQL_TIMEOUT`.
 
 **Quality gates**
 
@@ -43,12 +44,11 @@ Optional `.env` (see `.env.example`): `COTTONIL_LLM_BASE_URL`, `COTTONIL_LLM_MOD
 | `uv run pytest tests/test_pipeline.py` | exact rowcounts + view integrity + anomaly caps |
 | `uv run pytest tests/test_pages_smoke.py` | every page × 3 period modes renders clean |
 | `uv run pytest tests/test_pages_perf.py` | every page < 3 s render |
-| `uv run pytest tests/test_assistant.py -q -s` | SQL guard, refusal tests, goldset mechanics |
-| `uv run pytest tests/test_goldset.py -q -s` | 20-question goldset vs live LLM (release gate ≥ 80% — needs Ollama up) |
+| `uv run pytest tests/test_assistant.py -q -s` | SQL guard, refusal tests, goldset mechanics + live 20-question goldset (release gate ≥ 80% — runs against Gemini/Groq when the chain is up) |
 
 **Troubleshooting**
 - `data/cottonil.duckdb not found` → run `uv run build` first (requires the CSVs under `COTTONIL/COTTONIL_Data/`).
-- Assistant banner "LLM not reachable" → start `ollama serve`, pull a model, reload the page; engine is read-only regardless.
+- Assistant banner "LLM is not reachable" → check the provider table on the banner, verify `GEMINI_API_KEY` / `GROQ_API_KEY` in `.env`, reload the page; engine is read-only regardless. Quota-exhausted primary → the chain falls back to Groq automatically (answers are captioned "via Groq (fallback)").
 - Rebuilding while the app is open on Windows may hit a file lock → stop the streamlit process, rebuild, restart.
 
 ## What this repo is
