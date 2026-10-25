@@ -67,20 +67,24 @@
 
 ## Phase 5: US4 Branch Performance (P3)
 
-- [ ] T060 Branch ranked table: revenue, growth %, orders, AOV; top/bottom highlighting
-- [ ] T061 [P] Governorate-level bar (revenue + growth)
-- [ ] T062 [P] Growth % vs revenue scatter/star-ish charts (deck p4 style imitation, no map)
-- [ ] T063 Data notes expander
+- [x] T060 Branch ranked table: revenue, growth %, orders, AOV; top/bottom highlighting
+- [x] T061 [P] Governorate-level bar (revenue + growth)
+- [x] T062 [P] Growth % vs revenue scatter/star-ish charts (deck p4 style imitation, no map)
+- [x] T063 Data notes expander
+
+**Checkpoint**: US4 done ✅ (2026-10-25: AppTest 0 exceptions in L12M + All-time; 80/80 branches active in L12M; growth-colored table + gov growth-color bar + quadrant scatter)
 
 **Checkpoint**: US4 done
 
 ## Phase 6: US5 Inventory & Warehouse (P3)
 
-- [ ] T070 KPIs: latest-month units, stock value EGP, % locations at risk (stockout_risk_score ≥0.7)
-- [ ] T071 [P] Monthly stock value/units trend + warehouse/branch split
-- [ ] T072 [P] Category mix + status buckets (in-stock/overstock/low-stock via quantile policy)
-- [ ] T073 [P] Risk alerts table (top 10 locations×category)
-- [ ] T074 Data notes expander
+- [x] T070 KPIs: latest-month units, stock value EGP, % locations at risk (stockout_risk_score ≥0.7)
+- [x] T071 [P] Monthly stock value/units trend + warehouse/branch split
+- [x] T072 [P] Category mix + status buckets (in-stock/overstock/low-stock via quantile policy)
+- [x] T073 [P] Risk alerts table (top 10 locations×category)
+- [x] T074 Data notes expander
+
+**Checkpoint**: US5 done ✅ (2026-10-25: AppTest 0 exceptions; snapshot 2026-10: 1.8M units, EGP 346.0M value — matches audit A7; 2.2% at-risk ≥0.70 of 1472 cells; 114 low-stock cells)
 
 **Checkpoint**: US5 done
 
