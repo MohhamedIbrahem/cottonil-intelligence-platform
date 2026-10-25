@@ -125,10 +125,12 @@
 
 ## Phase 10: Polish
 
-- [ ] T110 Docs: update DATA_AUDIT + SCOPE matrix statuses; add runbook in README
-- [ ] T111 [P] Ruff clean; consistent naming
-- [ ] T112 [P] Perf: verify each page <3s (time in `st.cache_data` if needed)
-- [ ] T113 Record 2-min demo script (chat transcript + screenshots)
+- [x] T110 Docs: update DATA_AUDIT + SCOPE matrix statuses; add runbook in README
+- [x] T111 [P] Ruff clean; consistent naming
+- [x] T112 [P] Perf: verify each page <3s (time in `st.cache_data` if needed)
+- [x] T113 Record 2-min demo script (chat transcript + screenshots)
+
+**Checkpoint**: Release 001 candidate ✅ (2026-10-25: pages 0.23-0.41s vs 3.0s budget gate `tests/test_pages_perf.py`; assistant probe fail-fast 1.5s; README runbook (pages, LLM, gates, troubleshooting) + scope-matrix ship-status + `docs/DEMO_SCRIPT.md`; full suite **50 passed, 2 skipped** (live-LLM-gated) — ruff clean)
 
 **Checkpoint**: Release 001 candidate
 

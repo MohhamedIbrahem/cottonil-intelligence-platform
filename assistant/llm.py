@@ -32,8 +32,11 @@ def client() -> OpenAI:
     return _client
 
 
-def probe(timeout_seconds: float = 4.0) -> bool:
-    """True when the configured endpoint answers a cheap models.list() call."""
+def probe(timeout_seconds: float = 1.5) -> bool:
+    """True when the configured endpoint answers a cheap models.list() call.
+
+    1.5s keeps the down-LLM banner snappy on the page (the perf budget assumes
+    an answered endpoint)."""
     try:
         probe_client = OpenAI(base_url=env.LLM_BASE_URL, api_key=env.LLM_API_KEY,
                               timeout=timeout_seconds, max_retries=0)

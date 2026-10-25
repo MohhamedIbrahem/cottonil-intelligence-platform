@@ -2,18 +2,54 @@
 
 > Implementation of **HVIA Task 3** using the Cottonil dataset: data foundation, core dashboards, and an AI-powered business assistant — per the concept deck (`COTTONIL/HVIA_TASK_3_COTTONIL_ALL_23_IMAGES.pdf`, 23 pages).
 
-## Quickstart (planned → Phase 1 verified ✅)
+## Quickstart (feature 001 verified ✅)
 
 ```powershell
 uv sync                 # create venv + install deps (python 3.12)
 uv run build            # load COTTONIL_Data CSVs -> data/cottonil.duckdb (25 tables + 14 views)
 uv run checks           # data-quality gate: 34 integrity/reconciliation checks
-uv run pytest           # pipeline tests (builds temp DB, ~20 s)
+uv run pytest           # pipeline + pages + assistant tests (DB required; ~40 s)
 uv run streamlit run app/Home.py   # the dashboard app (needs the build first)
 ```
 
 - View definitions live in `pipeline/views/` (numbered, applied in order); the auto-generated contract doc is [`pipeline/VIEW_CATALOG.md`](pipeline/VIEW_CATALOG.md).
 - Metric definitions + anomaly policies: [`docs/DATA_AUDIT.md`](docs/DATA_AUDIT.md).
+
+## Runbook
+
+**App pages** (`streamlit run app/Home.py`, multipage):
+1. **Executive Overview** — period KPIs with same-window YoY, monthly trend, top-5 branches, governorate share, category/channel mix.
+2. **Sales Performance** — category-filterable trend, top-15 products, AOV/items-per-order cards.
+3. **Branch & Governorate** — growth-colored ranking, quadrant scatter, governorate growth bar.
+4. **Inventory & Stock** — latest-month snapshot vs period trend, status buckets, risk alerts.
+5. **Customers** — RFM tier table, top-LTV, profile mixes, customer lookup.
+6. **Assistant** — bilingual chat (EN/AR), every answer shows its SQL + sources, deep-link buttons.
+
+**Assistant LLM** (any OpenAI-compatible endpoint; default local Ollama):
+
+```powershell
+ollama serve                 # if not already running
+ollama pull llama3.1         # or a stronger/Arabic-tuned model, e.g. qwen2.5:7b-instruct
+uv run streamlit run app/Home.py
+```
+
+Optional `.env` (see `.env.example`): `COTTONIL_LLM_BASE_URL`, `COTTONIL_LLM_MODEL`, `COTTONIL_LLM_API_KEY`, `COTTONIL_SQL_TIMEOUT`.
+
+**Quality gates**
+
+| Command | Gate |
+|---|---|
+| `uv run checks` | 34 DQ gates (27 FK/orphan + 7 financial reconciliations) |
+| `uv run pytest tests/test_pipeline.py` | exact rowcounts + view integrity + anomaly caps |
+| `uv run pytest tests/test_pages_smoke.py` | every page × 3 period modes renders clean |
+| `uv run pytest tests/test_pages_perf.py` | every page < 3 s render |
+| `uv run pytest tests/test_assistant.py -q -s` | SQL guard, refusal tests, goldset mechanics |
+| `uv run pytest tests/test_goldset.py -q -s` | 20-question goldset vs live LLM (release gate ≥ 80% — needs Ollama up) |
+
+**Troubleshooting**
+- `data/cottonil.duckdb not found` → run `uv run build` first (requires the CSVs under `COTTONIL/COTTONIL_Data/`).
+- Assistant banner "LLM not reachable" → start `ollama serve`, pull a model, reload the page; engine is read-only regardless.
+- Rebuilding while the app is open on Windows may hit a file lock → stop the streamlit process, rebuild, restart.
 
 ## What this repo is
 

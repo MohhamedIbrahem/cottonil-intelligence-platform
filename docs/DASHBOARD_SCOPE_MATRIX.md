@@ -4,6 +4,10 @@
 
 Legend: **Ready** = directly computable · **Derived** = buildable via modeling/statistics · **Partial** = some fields exist, some don't (documented carve-outs) · **Missing** = no source columns (needs synthesized demo data or out-of-scope) · **Ship-when**: planned feature.
 
+## Feature 001 shipping status (2026-10-25)
+
+Code as tasks mark shipped for **001 Core**: p1 cover/theme, p2 Executive (`pages/1`), p3 Sales (`pages/2`), p4 Branch (`pages/3`), p5+6-row-4 Inventory (`pages/4`), p6 Customers/RFM (`pages/5`), p23 Assistant chat + shortcut rail (`pages/6`). Unshown deck rows below stay at their planned feature (002/003/004/out) with no code today.
+
 | # | Deck page | Dashboard concept | Data support | Ship-when | Notes / carve-outs |
 |---|---|---|---|---|---|
 | — | p1 | Cover (branding) | — | — | theme only |
