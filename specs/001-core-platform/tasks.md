@@ -115,9 +115,11 @@
 
 ## Phase 9: US8 Shortcut Rail (P4)
 
-- [ ] T100 Shortcuts list rendering with lambdas: Get Insights (period digest), View Reports (period report summary markdown), Check Inventory (product search term), Store Performance (branch chooser), Customer Insights (customer chooser), Supplier Information (supplier table + on-time/lead time from `070_supplier_pos`)
-- [ ] T101 [P] Session-scoped conversation memory; reset button; export answer to clipboard
-- [ ] T102 [P] Arabic test prompts in goldset (≥3) verified
+- [x] T100 Shortcuts list rendering with lambdas: Get Insights (period digest), View Reports (period report summary markdown), Check Inventory (product search term), Store Performance (branch chooser), Customer Insights (customer chooser), Supplier Information (supplier table + on-time/lead time from `070_supplier_pos`)
+- [x] T101 [P] Session-scoped conversation memory; reset button; export answer to clipboard
+- [x] T102 [P] Arabic test prompts in goldset (≥3) verified
+
+**Checkpoint**: US8 done; PDF p23 feature set fully mapped ✅ (2026-10-25: 6 shortcut tiles live (insights/report/inventory top-risk/branch picker→KPI+rank/customer-by-id→profile+recency/suppliers PO-value+lead+on-time); memory last-4 turns -> engine context; clear button + copy-expander (st.code clipboard) + truncation flag + deep-link; goldset has 5 Arabic questions (≥3, T102) — full-suite 44 pass + live skip; Ask-Questions IS the chat input)
 
 **Checkpoint**: US8 done; PDF p23 feature set fully mapped
 

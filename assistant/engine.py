@@ -108,13 +108,17 @@ def _table_markdown(df: pd.DataFrame, rows: int) -> str:
     return "\n".join(lines)
 
 
-def ask(question: str, *, chat_fn=llm.chat) -> AskResult:
-    """Full pipeline for one user question."""
+def ask(question: str, *, chat_fn=llm.chat, memory: list[dict[str, str]] | None = None) -> AskResult:
+    """Full pipeline for one user question.
+
+    `memory` is an optional list of prior turns ({"role", "content"} pairs) from
+    the UI session (T101); it is inserted as context AFTER the system prompt so
+    follow-up questions ("and for 2025?") resolve reasonably.
+    """
     result = AskResult(question=question)
-    history: list[dict[str, str]] = [
-        {"role": "system", "content": sql_system_prompt()},
-        {"role": "user", "content": question},
-    ]
+    history: list[dict[str, str]] = [{"role": "system", "content": sql_system_prompt()}]
+    history.extend(memory or [])
+    history.append({"role": "user", "content": question})
 
     for attempt in range(env.SQL_RETRIES + 1):
         try:
