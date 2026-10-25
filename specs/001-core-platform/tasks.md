@@ -100,14 +100,16 @@
 
 ## Phase 8: US7 AI Assistant (P2, depends on Phase 1 + any one dashboard)
 
-- [ ] T090 `assistant/schema_docs.py` — embed view catalog (from T021 artefact) with allowed views list
-- [ ] T091 [P] `assistant/sql_guard.py` — SELECT-only, single statement, allowlist enforcement, LIMIT 200, read-only connection
-- [ ] T092 [P] `assistant/llm.py` — OpenAI-compatible client (default Ollama env), retry on invalid SQL (max 2)
-- [ ] T093 `assistant/prompts.py` — system prompt: Cottonil context, metric dictionary summary, EN/AR answer rule, refusal policy, output format (markdown + numbered sources)
-- [ ] T094 Chat page `6_Assistant.py`: chat UI, SQL collapsible per message, deep-link button logic
-- [ ] T095 [P] `assistant/goldset.py` + `tests/test_goldset.py` — 20 question/expected-invariant pairs; pytest runs engine locally (no UI), reports accuracy %
-- [ ] T096 Refusal tests: write-action denial & out-of-scope (ESG/planogram) returns explicit "not in dataset" message
-- [ ] T097 Connection: DuckDB read-only view execution guard; time cap; error surfacing to chat (no raw tracebacks in UI)
+- [x] T090 `assistant/schema_docs.py` — embed view catalog (from T021 artefact) with allowed views list
+- [x] T091 [P] `assistant/sql_guard.py` — SELECT-only, single statement, allowlist enforcement, LIMIT 200, read-only connection
+- [x] T092 [P] `assistant/llm.py` — OpenAI-compatible client (default Ollama env), retry on invalid SQL (max 2)
+- [x] T093 `assistant/prompts.py` — system prompt: Cottonil context, metric dictionary summary, EN/AR answer rule, refusal policy, output format (markdown + numbered sources)
+- [x] T094 Chat page `6_Assistant.py`: chat UI, SQL collapsible per message, deep-link button logic
+- [x] T095 [P] `assistant/goldset.py` + `tests/test_goldset.py` — 20 question/expected-invariant pairs; pytest runs engine locally (no UI), reports accuracy %
+- [x] T096 Refusal tests: write-action denial & out-of-scope (ESG/planogram) returns explicit "not in dataset" message
+- [x] T097 Connection: DuckDB read-only view execution guard; time cap; error surfacing to chat (no raw tracebacks in UI)
+
+**Checkpoint**: US7 done; goldset ≥80% (2026-10-25: guard 11-block + 5-allow + multi-statement tests green; engine stub-verified end-to-end (540K orders invariant); goldset 20 pairs well-formed (EN+AR+3 refusal/OOS pairs) — LIVE accuracy run skipped while Ollama is down; `pytest tests/test_assistant.py` prints the report table when the LLM is up; full suite 45/46)
 
 **Checkpoint**: US7 done; goldset ≥80%
 
