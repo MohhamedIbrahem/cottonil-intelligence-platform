@@ -10,7 +10,7 @@ Pre-roll (before recording): `uv run build` + `uv run checks`, `.env` holding `G
 | 3 | 0:45–1:05 | **Sales Performance**: pick a category, show the trend + top products table snap to it; then **Branch page**: hover the quadrant scatter, red dots below the median. | "The category picker scopes the whole page. On branches, dot size is orders; growth-colored tables flag 'n/a' for branches with no prior window instead of printing a fake zero." |
 | 4 | 1:05–1:20 | **Inventory**: read snapshot tiles (2026-10: 1.8M units, EGP 346.0M) + open the risk-alerts table. | "Stock is tracked monthly per location × category. The at-risk filter uses the deck's ≥0.70 alert line; the low-stock bucket threshold is disclosed separately." |
 | 5 | 1:20–1:50 | **Assistant**: click ▶ *Get insights*; then ask two questions — "أعلى 5 فروع مبيعاً في 2025" and "Show returns by reason". Expand *SQL used* on the second. | "Ask in Arabic or English. Every answer is a guarded read-only SELECT — writes are refused by contract — and each message shows the exact SQL and lets you jump to the dashboard that matches. The assistant knows the data quirks: it won't compare purchase-order totals to revenue (audit A1) and it flags guest checkouts honestly." |
-| 6 | 1:50–2:00 | Terminal: `uv run pytest -q` scroll of greens + goldset line. | "Underneath: 45 tests — data, pages, assistant safety, a 20-question goldset — same gates run on every commit." |
+| 6 | 1:50–2:00 | Terminal: `uv run pytest -q` scroll of greens + goldset line. | "Underneath: 56 tests — data, pages, assistant safety, and the 20-question goldset scored **19/20 = 95%** against the live Gemini model (Groq on standby as fallback) — same gates run on every commit." |
 
 ## Screenshot checklist
 - [ ] Home hero + four all-time KPI tiles
@@ -20,6 +20,9 @@ Pre-roll (before recording): `uv run build` + `uv run checks`, `.env` holding `G
 - [ ] Inventory risk alerts table
 - [ ] Assistant: Arabic question answered + SQL expander open
 - [ ] Terminal: full pytest run green
+
+- Assistant answers all 20 goldset question/invariant pairs at **19/20 = 95%** via Gemini; Groq fails over automatically on quota/outage (answers tagged "via Groq (fallback)").
+- Assistant LLM keys in `.env`: `GEMINI_API_KEY`/`GEMINI_MODEL` (primary) + `GROQ_API_KEY`/`GROQ_MODEL` (fallback).
 
 ## Known-demo facts (say these confidently)
 - Net sales all-time **EGP 841,274,176** excl. 14% VAT · orders **540,000** · buyers **74,660/85,000**.

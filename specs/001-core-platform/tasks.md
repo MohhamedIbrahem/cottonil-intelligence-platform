@@ -109,7 +109,7 @@
 - [x] T096 Refusal tests: write-action denial & out-of-scope (ESG/planogram) returns explicit "not in dataset" message
 - [x] T097 Connection: DuckDB read-only view execution guard; time cap; error surfacing to chat (no raw tracebacks in UI)
 
-**Checkpoint**: US7 done; goldset ≥80% (2026-10-25: guard 11-block + 5-allow + multi-statement tests green; engine stub-verified end-to-end (540K orders invariant); goldset 20 pairs well-formed (EN+AR+3 refusal/OOS pairs) — LIVE accuracy run skipped while Ollama is down; `pytest tests/test_assistant.py` prints the report table when the LLM is up; full suite 45/46)
+**Checkpoint**: US7 done; goldset ≥80% ✅ (2026-10-25: Gemini primary + Groq fallback chain (commit 1ac0acd, llama3.1/Ollama dropped); guard + refusal-contract tests green; goldset LIVE accuracy **19/20 = 95%**, all via Gemini, paced 9.5 s/case for free-tier RPM; engine honors prompt-contract REFUSAL; provider attribution in AskResult; full suite **56 passed / 0 skipped**)
 
 **Checkpoint**: US7 done; goldset ≥80%
 
