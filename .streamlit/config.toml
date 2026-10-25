@@ -1,0 +1,16 @@
+# Streamlit theme (T034) - matches app/theme.py navy palette.
+# Note: the canonical location is .streamlit/config.toml (the task list's
+# "streamlit.config.toml" refers to this file).
+[theme]
+base = "dark"
+primaryColor = "#2F80ED"
+backgroundColor = "#0B1526"
+secondaryBackgroundColor = "#13234C"
+textColor = "#E8EEF7"
+font = "sans serif"
+
+[browser]
+gatherUsageStats = false
+
+[server]
+maxUploadSize = 10

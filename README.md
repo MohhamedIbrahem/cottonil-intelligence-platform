@@ -9,7 +9,7 @@ uv sync                 # create venv + install deps (python 3.12)
 uv run build            # load COTTONIL_Data CSVs -> data/cottonil.duckdb (25 tables + 14 views)
 uv run checks           # data-quality gate: 34 integrity/reconciliation checks
 uv run pytest           # pipeline tests (builds temp DB, ~20 s)
-# UI next:  uv run streamlit run app/Home.py     (Phase 2+)
+uv run streamlit run app/Home.py   # the dashboard app (needs the build first)
 ```
 
 - View definitions live in `pipeline/views/` (numbered, applied in order); the auto-generated contract doc is [`pipeline/VIEW_CATALOG.md`](pipeline/VIEW_CATALOG.md).

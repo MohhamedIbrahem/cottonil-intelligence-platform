@@ -34,5 +34,9 @@ packages = ["pipeline"]
 line-length = 100
 target-version = "py312"
 
+[tool.ruff.lint.per-file-ignores]
+# Streamlit multipage requires the entrypoint to be named Home.py (capital H).
+"app/Home.py" = ["N999"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -37,13 +37,13 @@
 
 ## Phase 2: App Shell (shared UI)
 
-- [ ] T030 `app/theme.py` — navy palette constants + `kpi_card(title, value, delta, help_text)` component + chart style
-- [ ] T031 [P] `app/filters.py` — period selector state (Last 12 months / calendar-year / all), `where_period(df)` helper, dataset-last-date aware labels + `st.session_state`
-- [ ] T032 [P] `app/data.py` — DuckDB connection singleton + `q(view)` convenience returning pandas df
-- [ ] T033 `app/Home.py` — app title, nav, landing = Executive Overview placeholder; shared filter render
-- [ ] T034 `streamlit.config.toml` theme config; verify dark navy look
+- [x] T030 `app/theme.py` — navy palette constants + `kpi_card(title, value, delta, help_text)` component + chart style
+- [x] T031 [P] `app/filters.py` — period selector state (Last 12 months / calendar-year / all), `where_period(df)` helper, dataset-last-date aware labels + `st.session_state`
+- [x] T032 [P] `app/data.py` — DuckDB connection singleton + `q(view)` convenience returning pandas df
+- [x] T033 `app/Home.py` — app title, nav, landing = Executive Overview placeholder; shared filter render
+- [x] T034 `streamlit.config.toml` theme config; verify dark navy look
 
-**Checkpoint**: shell runs, shared filter works
+**Checkpoint**: shell runs, shared filter works ✅ (2026-10-25: headless server health/main 200, AppTest 0 exceptions, 34/34 DQ + ruff clean; home KPIs read real views)
 
 ## Phase 3: US2 Executive Overview (P2) 🎯 demo-able core
 
