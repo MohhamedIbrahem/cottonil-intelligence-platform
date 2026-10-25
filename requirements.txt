@@ -1,0 +1,22 @@
+# Draft dependency list — will be superseded by pyproject.toml in Phase 0 (tasks.md T001).
+# Approved stack per specs/001-core-platform/plan.md (minimal, local-first; Constitution I).
+
+# Analytics engine
+duckdb>=1.1.0
+pandas>=2.0.0
+pyarrow>=14.0.0
+
+# App
+streamlit>=1.37.0
+plotly>=5.22.0
+
+# Assistant (OpenAI-compatible client; default endpoint = local Ollama)
+openai>=1.30.0
+
+# Dev / quality gates
+pytest>=8.0.0
+ruff>=0.6.0
+
+# Deferred to later features:
+#   statsmodels  -> feature 003 (forecasting, pricing)
+#   fastapi etc. -> only if a server layer is ever approved (out of v1 scope)

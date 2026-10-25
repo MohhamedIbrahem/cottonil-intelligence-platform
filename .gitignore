@@ -1,0 +1,41 @@
+# Data files - never commit raw data
+COTTONIL/COTTONIL_Data/
+COTTONIL/HVIA_TASK_3_COTTONIL_ALL_23_IMAGES.pdf
+data/
+*.parquet
+*.duckdb
+*.duckdb.wal
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.env
+*.env.local
+
+# Node / Frontend
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets
+.env.local
+.env.production
