@@ -90,13 +90,13 @@
 
 ## Phase 7: US6 Customer Intelligence (P3)
 
-- [ ] T080 Segment/age/gov mix donuts + join trend
-- [ ] T081 [P] RFM segment table from `085_customer_profile` view (Champions, Loyal, At Risk…)
-- [ ] T082 [P] Repeat rate KPI + top customers by LTV
-- [ ] T083 [P] Customer lookup (search by name/id → order history)
-- [ ] T084 Data notes expander
+- [x] T080 Segment/age/gov mix donuts + join trend
+- [x] T081 [P] RFM segment table from `085_customer_profile` view (Champions, Loyal, At Risk…)
+- [x] T082 [P] Repeat rate KPI + top customers by LTV
+- [x] T083 [P] Customer lookup (search by name/id → order history)
+- [x] T084 Data notes expander
 
-**Checkpoint**: Core 5 complete
+**Checkpoint**: Core 5 complete ✅ (2026-10-25: RFM table + top-10 LTV + lookup live; L12M: 51.5K active, 41.1% repeat; smoke test suite `tests/test_pages_smoke.py` added - AppTest across all pages × 3 modes, 19/19 full suite green; lookup fixed to string ids C0xxxxxx)
 
 ## Phase 8: US7 AI Assistant (P2, depends on Phase 1 + any one dashboard)
 
