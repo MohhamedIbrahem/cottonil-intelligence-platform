@@ -57,13 +57,13 @@
 
 ## Phase 4: US3 Sales Performance (P3)
 
-- [ ] T050 Monthly sales performance line (net + profit), category filter
-- [ ] T051 [P] Top-selling products table (units + EGP) per period
-- [ ] T052 [P] Category revenue share donut + average basket (AOV, items/order)
-- [ ] T053 [P] Governorate breakdown bar
-- [ ] T054 Data notes expander
+- [x] T050 Monthly sales performance line (net + profit), category filter
+- [x] T051 [P] Top-selling products table (units + EGP) per period
+- [x] T052 [P] Category revenue share donut + average basket (AOV, items/order)
+- [x] T053 [P] Governorate breakdown bar
+- [x] T054 Data notes expander
 
-**Checkpoint**: US3 done independently
+**Checkpoint**: US3 done independently ✅ (2026-10-25: AppTest 0 exceptions in All-categories + single-category modes; cards: net 293.2M +36.3% (matches Executive), orders 100.3K, AOV 2.9K +23.2%, items/order 6.22 -1.3%, units 623.7K)
 
 ## Phase 5: US4 Branch Performance (P3)
 
