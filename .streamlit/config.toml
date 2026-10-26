@@ -1,12 +1,10 @@
-# Streamlit theme (T034) - matches app/theme.py navy palette.
-# Note: the canonical location is .streamlit/config.toml (the task list's
-# "streamlit.config.toml" refers to this file).
+# Streamlit theme — Cottonil Light Pro (matches app/theme.py)
 [theme]
-base = "dark"
-primaryColor = "#2F80ED"
-backgroundColor = "#0B1526"
-secondaryBackgroundColor = "#13234C"
-textColor = "#E8EEF7"
+base = "light"
+primaryColor = "#0F4C75"
+backgroundColor = "#F7F8FA"
+secondaryBackgroundColor = "#EEF2F7"
+textColor = "#0F172A"
 font = "sans serif"
 
 [browser]

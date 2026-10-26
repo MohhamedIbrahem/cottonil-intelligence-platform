@@ -101,7 +101,7 @@ donut_figs = []
 for frame, title in ((seg, "By segment"), (age, "By age band"), (gov, "By governorate")):
     fig = go.Figure(go.Pie(
         hole=0.55, labels=frame.name, values=frame.customers,
-        marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT},
+        marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT_ON_COLOR},
         customdata=frame.customers,
         hovertemplate="%{label}: %{customdata:,} customers (%{percent})<extra></extra>",
     ))

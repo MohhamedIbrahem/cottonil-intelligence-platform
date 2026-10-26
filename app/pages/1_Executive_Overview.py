@@ -132,7 +132,7 @@ trend_fig = go.Figure()
 trend_fig.add_trace(go.Scatter(
     x=trend.month, y=trend.net, name="Net sales",
     mode="lines+markers", line={"width": 3, "color": theme.ACCENT_2},
-    fill="tozeroy", fillcolor="rgba(86,204,242,0.12)",
+    fill="tozeroy", fillcolor="rgba(2,132,199,0.10)",
     hovertemplate="%{x|%b %Y}: EGP %{y:,.0f}<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(
@@ -214,7 +214,7 @@ chan = data.q(
 c_col, ch_col = st.columns(2)
 c_fig = go.Figure(go.Pie(
     hole=0.56, labels=cat.category, values=cat.net,
-    marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT},
+    marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT_ON_COLOR},
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent})<extra></extra>",
 ))
 c_fig.update_layout(title="Category mix (net sales)")
