@@ -106,7 +106,7 @@ st.divider()
 table = cur_b[["branch", "governorate", "net", "growth", "orders", "aov"]].copy()
 table["growth"] = table.growth.map(lambda v: "n/a" if pd.isna(v) else f"{v:+.1%}")
 styled = table.style.map(
-    lambda v: "color: #8FA6C9;" if str(v) == "n/a"
+    lambda v: f"color: {theme.TEXT_MUTED};" if str(v) == "n/a"
     else f"color: {theme.GOOD if str(v).startswith('+') else theme.BAD}; font-weight: 600;",
     subset=["growth"],
 )
@@ -136,7 +136,7 @@ gov_col, sc_col = st.columns([1, 1])
 gov_fig = go.Figure(go.Bar(
     x=gov_c.share, y=gov_c.governorate, orientation="h",
     marker={"color": gov_c.growth.fillna(0),
-            "colorscale": [[0.0, theme.BAD], [0.5, "#3A4E7A"], [1.0, theme.GOOD]],
+            "colorscale": [[0.0, theme.BAD], [0.5, "#CBD5E1"], [1.0, theme.GOOD]],
             "cmin": -0.3, "cmax": 0.3, "showscale": False},
     text=[theme.fmt_pct(s) + (f" ({g:+.0%})" if pd.notna(g) else "")
           for s, g in zip(gov_c.share, gov_c.growth, strict=True)],
@@ -160,7 +160,7 @@ sc_fig = go.Figure(go.Scatter(
         "size": np.sqrt(sc.orders) * 3.0 + 6.0,
         "color": [theme.GOOD if g >= 0 else theme.BAD for g in sc.growth],
         "opacity": 0.8,
-        "line": {"color": theme.TEXT, "width": 0.5},
+        "line": {"color": theme.TEXT_ON_COLOR, "width": 0.5},
     },
     customdata=np.stack([sc.branch, sc.governorate, sc.orders, sc.growth], axis=-1),
     hovertemplate="%{customdata[0]} (%{customdata[1]})<br>"

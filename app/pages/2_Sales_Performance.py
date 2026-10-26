@@ -118,7 +118,7 @@ trend_fig = go.Figure()
 trend_fig.add_trace(go.Scatter(
     x=trend.month, y=trend.net, name="Net sales",
     mode="lines+markers", line={"width": 3, "color": theme.ACCENT_2},
-    fill="tozeroy", fillcolor="rgba(86,204,242,0.12)",
+    fill="tozeroy", fillcolor="rgba(2,132,199,0.10)",
     hovertemplate="%{x|%b %Y}: EGP %{y:,.0f}<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(
@@ -187,7 +187,7 @@ else:
 mix_fig = go.Figure(go.Pie(
     hole=0.56, labels=donut_src.name, values=donut_src.net,
     marker={"colors": theme.COLORS}, textinfo="percent",
-    textfont={"color": theme.TEXT},
+    textfont={"color": theme.TEXT_ON_COLOR},
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent})<extra></extra>",
 ))
 mix_fig.update_layout(title=donut_title)

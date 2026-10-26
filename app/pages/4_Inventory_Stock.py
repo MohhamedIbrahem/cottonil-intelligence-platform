@@ -145,7 +145,7 @@ status = data.q(
 
 cat_fig = go.Figure(go.Pie(
     hole=0.56, labels=cat_plot.category, values=cat_plot.value_egp,
-    marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT},
+    marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT_ON_COLOR},
     customdata=cat_plot.units,
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,.0f} units<extra></extra>",
 ))
@@ -154,8 +154,8 @@ theme.apply_plotly_style(cat_fig)
 
 status_fig = go.Figure(go.Pie(
     hole=0.56, labels=status.status, values=status.value_egp,
-    marker={"colors": [theme.WARN, theme.ACCENT_2, theme.ACCENT], "line": {"color": theme.NAVY_BG, "width": 2}},
-    textinfo="label+percent", textfont={"color": theme.TEXT},
+    marker={"colors": [theme.WARN, theme.ACCENT_2, theme.ACCENT], "line": {"color": theme.TEXT_ON_COLOR, "width": 2}},
+    textinfo="label+percent", textfont={"color": theme.TEXT_ON_COLOR},
     customdata=status.cells,
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,} cells<extra></extra>",
 ))
@@ -186,7 +186,7 @@ def _risk_style(v: float) -> str:
         return f"color: {theme.BAD}; font-weight: 600;"
     if v >= 0.60:
         return f"color: {theme.WARN}; font-weight: 600;"
-    return "color: #8FA6C9;"
+    return f"color: {theme.TEXT_MUTED};"
 
 
 st.markdown(f"#### Top-10 stockout-risk alerts — {latest_month}")
