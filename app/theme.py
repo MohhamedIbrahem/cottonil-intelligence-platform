@@ -68,6 +68,25 @@ COLORS = [
     NEUTRAL,
 ]
 
+# Light companions for the domain colours, mirroring ACCENT_2's role next to
+# ACCENT: a domain page pairs its lead colour with its light companion for
+# secondary series.
+TEAL_2 = "#5EEAD4"        # light teal: secondary operations series
+VIOLET_2 = "#A78BFA"      # light violet: secondary customer/model series
+AMBER_2 = "#FBBF24"       # light amber: secondary promotion series
+ROSE_2 = "#F9A8D4"        # light rose: secondary product series
+VIOLET_SOFT = "rgba(139,92,246,0.12)"  # forecast band fill on violet pages
+
+
+def palette(lead: str) -> list[str]:
+    """Categorical sequence rotated to start with a page's domain colour.
+
+    Pages with a domain identity (customers = VIOLET, operations = TEAL,
+    promotions = AMBER, products = ROSE) colour their mixes with
+    ``palette(<domain token>)`` so the lead slice carries the domain colour
+    while the remaining slices keep the platform rotation."""
+    return [lead] + [c for c in COLORS if c != lead]
+
 FONT_STACK = '"Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif'
 MONO_STACK = '"Cascadia Code", "SFMono-Regular", Consolas, monospace'
 

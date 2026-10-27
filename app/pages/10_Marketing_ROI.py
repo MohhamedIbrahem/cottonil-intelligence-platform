@@ -151,7 +151,7 @@ trend["roas"] = trend.net / trend.spend.where(trend.spend > 0)
 trend_fig = go.Figure()
 trend_fig.add_trace(go.Bar(
     x=trend.ym, y=trend.spend,
-    name="Spend (EGP)", marker_color=theme.ACCENT,
+    name="Spend (EGP)", marker_color=theme.AMBER,
     customdata=trend.net,
     hovertemplate=(
         "%{x}: spend EGP %{y:,.0f}<br>Attributed net EGP %{customdata:,.0f}<extra></extra>"
@@ -160,7 +160,7 @@ trend_fig.add_trace(go.Bar(
 trend_fig.add_trace(go.Scatter(
     x=trend.ym, y=trend.roas,
     name="ROAS", mode="lines+markers", yaxis="y2",
-    line={"color": theme.ACCENT_2, "width": 2},
+    line={"color": theme.AMBER_2, "width": 2},
     hovertemplate="%{x}: %{y:.2f}x<extra></extra>",
 ))
 trend_fig.update_layout(
@@ -202,7 +202,7 @@ channel_df["budget_utilization"] = channel_df.spend / channel_df.budget.where(ch
 
 channel_fig = go.Figure(go.Bar(
     x=channel_df.roas, y=channel_df.channel, orientation="h",
-    marker_color=theme.ACCENT,
+    marker_color=theme.AMBER,
     text=[f"{roas:.2f}x · {theme.fmt_egp(spend)}"
           for roas, spend in zip(channel_df.roas, channel_df.spend, strict=True)],
     textposition="outside", cliponaxis=False,
@@ -251,7 +251,7 @@ budget_df = data.q(
 
 budget_fig = go.Figure(go.Bar(
     x=budget_df.bucket, y=budget_df.campaigns,
-    marker_color=theme.ACCENT_2,
+    marker_color=theme.AMBER_2,
     customdata=budget_df[["spend", "budget"]].to_numpy(),
     text=budget_df.campaigns,
     textposition="outside", cliponaxis=False,

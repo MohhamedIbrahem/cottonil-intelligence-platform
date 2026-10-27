@@ -155,7 +155,7 @@ with left:
             y=category.category_en,
             orientation="h",
             marker_color=[
-                theme.BAD if value < LOW_MARGIN else theme.ACCENT
+                theme.BAD if value < LOW_MARGIN else theme.ROSE
                 for value in category.gross_margin
             ],
             customdata=category[["net_sales", "low_margin_share"]],
@@ -192,7 +192,7 @@ with right:
         go.Histogram(
             x=sku_months.gross_margin,
             nbinsx=50,
-            marker_color=theme.ACCENT_2,
+            marker_color=theme.ROSE_2,
             hovertemplate="Margin %{x:.0%}<br>SKU-months %{y}<extra></extra>",
         )
     )

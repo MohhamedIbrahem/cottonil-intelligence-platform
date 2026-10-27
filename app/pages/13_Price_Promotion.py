@@ -150,7 +150,7 @@ with left:
             text=category["category_en"],
             marker={
                 "size": category["net_sales"] / category["net_sales"].max() * 42 + 12,
-                "color": theme.ACCENT,
+                "color": theme.AMBER,
                 "opacity": 0.72,
                 "line": {"color": theme.CARD, "width": 1},
             },
@@ -189,7 +189,7 @@ with right:
         go.Histogram(
             x=depth["discount_rate"],
             nbinsx=40,
-            marker_color=theme.ACCENT_2,
+            marker_color=theme.AMBER_2,
             hovertemplate="Discount %{x:.0%}<br>SKU-months %{y}<extra></extra>",
         )
     )
@@ -234,7 +234,7 @@ trend.add_trace(
         y=monthly.discount_rate,
         name="Discount rate",
         mode="lines+markers",
-        line={"color": theme.ACCENT, "width": 2},
+        line={"color": theme.AMBER, "width": 2},
     )
 )
 trend.add_trace(

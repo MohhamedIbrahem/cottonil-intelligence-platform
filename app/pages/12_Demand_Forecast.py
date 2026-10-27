@@ -125,7 +125,7 @@ fig.add_trace(
         y=history_view["actual"],
         mode="lines",
         name="Actual",
-        line={"color": theme.ACCENT, "width": 2.5},
+        line={"color": theme.VIOLET, "width": 2.5},
     )
 )
 fig.add_trace(
@@ -154,7 +154,7 @@ fig.add_trace(
         y=forecast["lo"],
         mode="lines",
         fill="tonexty",
-        fillcolor=theme.ACCENT_SOFT,
+        fillcolor=theme.VIOLET_SOFT,
         line={"width": 0},
         name=f"Planning band (±{band_pct:.1%})",
         hoverinfo="skip",
@@ -166,7 +166,7 @@ fig.add_trace(
         y=forecast["forecast"],
         mode="lines+markers",
         name="Forecast",
-        line={"color": theme.ACCENT_2, "width": 2.5},
+        line={"color": theme.VIOLET_2, "width": 2.5},
         marker={"size": 7},
     )
 )
@@ -199,7 +199,7 @@ with left:
             x=seasonal["month_name"],
             y=seasonal["index"],
             marker_color=[
-                theme.ACCENT if value >= 1 else theme.ACCENT_2_SOFT
+                theme.VIOLET if value >= 1 else theme.VIOLET_2
                 for value in seasonal["index"]
             ],
             hovertemplate="%{x}: index %{y:.2f}<extra></extra>",
