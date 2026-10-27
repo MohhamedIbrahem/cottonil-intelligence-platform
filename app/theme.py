@@ -4,6 +4,7 @@ Presentation only: tokens, typography, cards, status chips, page headers and a
 single Plotly template. Every number on screen still comes from the curated
 views; this module never queries or calculates business metrics.
 """
+
 from __future__ import annotations
 
 import html
@@ -822,6 +823,7 @@ def kpi_card(
         unsafe_allow_html=True,
     )
 
+
 def apply_plotly_style(fig) -> None:
     """Uniform light template for every chart in the app."""
     has_title = bool(getattr(fig.layout.title, "text", None))
@@ -929,14 +931,19 @@ def _compact(value: float) -> tuple[float, str]:
         return value / 1_000, "K"
     return value, ""
 
+
 def fmt_egp(value: float) -> str:
+    """EGP 148.8M style (compact, deck-like)."""
     number, suffix = _compact(value)
     return f"EGP {number:,.1f}{suffix}"
 
+
 def fmt_int(value: float) -> str:
     number, suffix = _compact(value)
-    if suffix: return f"{number:,.1f}{suffix}"
+    if suffix:
+        return f"{number:,.1f}{suffix}"
     return f"{number:,.0f}"
+
 
 def fmt_pct(value: float, digits: int = 1) -> str:
     return f"{value * 100:,.{digits}f}%"

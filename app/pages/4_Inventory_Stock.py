@@ -143,7 +143,7 @@ status = data.q(
 
 cat_fig = go.Figure(go.Pie(
     hole=0.56, labels=cat_plot.category, values=cat_plot.value_egp,
-    marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT},
+    marker={"colors": theme.COLORS}, textinfo="percent",
     customdata=cat_plot.units,
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,.0f} units<extra></extra>",
 ))
@@ -152,8 +152,8 @@ theme.apply_plotly_style(cat_fig)
 
 status_fig = go.Figure(go.Pie(
     hole=0.56, labels=status.status, values=status.value_egp,
-    marker={"colors": [theme.WARN, theme.ACCENT_2, theme.ACCENT], "line": {"color": theme.NAVY_BG, "width": 2}},
-    textinfo="label+percent", textfont={"color": theme.TEXT},
+    marker={"colors": [theme.WARN, theme.ACCENT_2, theme.ACCENT], "line": {"color": theme.CARD, "width": 2}},
+    textinfo="label+percent",
     customdata=status.cells,
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,} cells<extra></extra>",
 ))
