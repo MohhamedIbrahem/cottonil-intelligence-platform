@@ -170,7 +170,7 @@ delivery_trend["delayed_rate"] = (
 trend_fig = go.Figure()
 trend_fig.add_trace(go.Bar(
     x=delivery_trend.ym, y=delivery_trend.shipments,
-    name="Shipments", marker_color=theme.ACCENT,
+    name="Shipments", marker_color=theme.TEAL,
     hovertemplate="%{x}: %{y:,} shipments<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(
@@ -207,7 +207,7 @@ carrier_df = carrier_df.sort_values("delayed_rate", ascending=True)
 
 carrier_fig = go.Figure(go.Bar(
     x=carrier_df.delayed_rate, y=carrier_df.carrier, orientation="h",
-    marker_color=theme.ACCENT_2,
+    marker_color=theme.TEAL_2,
     text=[f"{rate:.1%} · {n:,}"
           for rate, n in zip(carrier_df.delayed_rate, carrier_df.shipments, strict=True)],
     textposition="outside", cliponaxis=False,
@@ -328,7 +328,7 @@ transfer_trend = data.q(
 transfer_fig = go.Figure()
 transfer_fig.add_trace(go.Bar(
     x=transfer_trend.ym, y=transfer_trend.cost,
-    name="Transport cost (EGP)", marker_color=theme.ACCENT_2,
+    name="Transport cost (EGP)", marker_color=theme.TEAL_2,
     hovertemplate="%{x}: EGP %{y:,.0f}<extra></extra>",
 ))
 transfer_fig.add_trace(go.Scatter(
@@ -363,7 +363,7 @@ status_fig = go.Figure(go.Pie(
     labels=status_df.transfer_status,
     values=status_df.transfers,
     hole=0.55,
-    marker={"colors": [theme.GOOD, theme.WARN, theme.ACCENT]},
+    marker={"colors": [theme.GOOD, theme.WARN, theme.TEAL]},
     textinfo="percent",
     hovertemplate="%{label}: %{value:,} transfers<br>EGP %{customdata:,.0f}<extra></extra>",
     customdata=status_df.cost,

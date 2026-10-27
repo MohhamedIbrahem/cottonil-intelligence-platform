@@ -270,7 +270,7 @@ def _render_ci() -> None:
     for frame, title in ((seg, "By segment"), (age, "By age band"), (gov, "By governorate")):
         fig = go.Figure(go.Pie(
             hole=0.55, labels=frame.name, values=frame.customers,
-            marker={"colors": theme.COLORS}, textinfo="percent",
+            marker={"colors": theme.palette(theme.VIOLET)}, textinfo="percent",
             customdata=frame.customers,
             hovertemplate="%{label}: %{customdata:,} customers (%{percent})<extra></extra>",
         ))
@@ -468,7 +468,7 @@ def _render_clv() -> None:
                 y=clv_share[::step],
                 mode="lines",
                 name="Actual CLV concentration",
-                line={"color": theme.ACCENT, "width": 2.5},
+                line={"color": theme.VIOLET, "width": 2.5},
                 hovertemplate="Cumulative customers %{x:.1%}<br>Cumulative CLV %{y:.1%}<extra></extra>",
             )
         )
@@ -506,7 +506,7 @@ def _render_clv() -> None:
                 hole=0.55,
                 labels=status.churn_status,
                 values=status.customers,
-                marker={"colors": [status_colors.get(value, theme.ACCENT) for value in status.churn_status]},
+                marker={"colors": [status_colors.get(value, theme.VIOLET) for value in status.churn_status]},
                 textinfo="percent",
                 customdata=status.customers,
                 hovertemplate="%{label}<br>%{customdata:,} customers (%{percent})<extra></extra>",
@@ -529,7 +529,7 @@ def _render_clv() -> None:
             go.Bar(
                 x=segment.customer_segment,
                 y=segment.clv,
-                marker_color=[theme.ACCENT, theme.ACCENT_2][: len(segment)],
+                marker_color=[theme.VIOLET, theme.VIOLET_2][: len(segment)],
                 customdata=segment[["buyers", "median_clv"]],
                 text=[f"{value:,.0f} buyers" for value in segment.buyers],
                 textposition="outside",
@@ -556,7 +556,7 @@ def _render_clv() -> None:
             go.Bar(
                 x=repurchase.recency_bucket,
                 y=repurchase.repurchase_rate,
-                marker_color=theme.ACCENT_2,
+                marker_color=theme.VIOLET_2,
                 customdata=repurchase.customers,
                 text=[f"{value:.1%}" for value in repurchase.repurchase_rate],
                 textposition="inside",

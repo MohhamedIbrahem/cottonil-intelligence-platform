@@ -53,7 +53,7 @@ SIGNAL_COLORS = {
     "Low (14-30d)": theme.ORANGE,
     "Below target (30-45d)": theme.WARN,
     "Adequate (45-180d)": theme.GOOD,
-    "Overstock (>180d)": theme.ACCENT_2,
+    "Overstock (>180d)": theme.TEAL_2,
     "No demand signal": theme.NEUTRAL,
 }
 TARGET_DAYS = 45
@@ -127,7 +127,7 @@ def _render_stock() -> None:
         (ym_start, ym_end),
     )
     val_fig = go.Figure()
-    for loc_type, color in zip(("BRANCH", "WAREHOUSE"), (theme.ACCENT, theme.ACCENT_2), strict=False):
+    for loc_type, color in zip(("BRANCH", "WAREHOUSE"), (theme.TEAL, theme.TEAL_2), strict=False):
         sub = trend[trend.loc_type == loc_type]
         if sub.empty:
             continue
@@ -141,7 +141,7 @@ def _render_stock() -> None:
     val_fig.update_xaxes(tickformat="%b %Y")
 
     u_fig = go.Figure()
-    for loc_type, color in zip(("BRANCH", "WAREHOUSE"), (theme.ACCENT, theme.ACCENT_2), strict=False):
+    for loc_type, color in zip(("BRANCH", "WAREHOUSE"), (theme.TEAL, theme.TEAL_2), strict=False):
         sub = trend[trend.loc_type == loc_type]
         if sub.empty:
             continue
@@ -185,7 +185,7 @@ def _render_stock() -> None:
 
     cat_fig = go.Figure(go.Pie(
         hole=0.56, labels=cat_plot.category, values=cat_plot.value_egp,
-        marker={"colors": theme.COLORS}, textinfo="percent",
+        marker={"colors": theme.palette(theme.TEAL)}, textinfo="percent",
         customdata=cat_plot.units,
         hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,.0f} units<extra></extra>",
     ))
@@ -194,7 +194,7 @@ def _render_stock() -> None:
 
     status_fig = go.Figure(go.Pie(
         hole=0.56, labels=status.status, values=status.value_egp,
-        marker={"colors": [theme.WARN, theme.ACCENT_2, theme.ACCENT], "line": {"color": theme.CARD, "width": 2}},
+        marker={"colors": [theme.WARN, theme.TEAL_2, theme.TEAL], "line": {"color": theme.CARD, "width": 2}},
         textinfo="label+percent",
         customdata=status.cells,
         hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,} cells<extra></extra>",
@@ -357,7 +357,7 @@ def _render_replenishment() -> None:
             .fillna(0)
         )
         signal_fig = go.Figure()
-        for location_type, color in (("Branch", theme.ACCENT), ("Warehouse", theme.ACCENT_2)):
+        for location_type, color in (("Branch", theme.TEAL), ("Warehouse", theme.TEAL_2)):
             if location_type in counts.columns:
                 signal_fig.add_trace(
                     go.Bar(

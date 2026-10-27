@@ -142,13 +142,13 @@ trend = data.q(
 trend_fig = go.Figure()
 trend_fig.add_trace(go.Bar(
     x=trend.ym, y=trend.value,
-    name="PO value (EGP, A1)", marker_color=theme.ACCENT,
+    name="PO value (EGP, A1)", marker_color=theme.TEAL,
     hovertemplate="%{x}: EGP %{y:,.0f}<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(
     x=trend.ym, y=trend.avg_lead_days,
     name="Avg lead days", mode="lines+markers", yaxis="y2",
-    line={"color": theme.ACCENT_2, "width": 2},
+    line={"color": theme.TEAL_2, "width": 2},
     hovertemplate="%{x}: %{y:.1f} days<extra></extra>",
 ))
 trend_fig.update_layout(
@@ -189,7 +189,7 @@ mix_fig = go.Figure(go.Pie(
     labels=material_df.material_type,
     values=material_df.value,
     hole=0.55,
-    marker={"colors": theme.COLORS},
+    marker={"colors": theme.palette(theme.TEAL)},
     textinfo="percent",
     hovertemplate="%{label}: EGP %{value:,.0f}<extra></extra>",
 ))
@@ -199,7 +199,7 @@ theme.apply_plotly_style(mix_fig)
 lead_df = material_df.sort_values("avg_lead_days")
 lead_fig = go.Figure(go.Bar(
     x=lead_df.avg_lead_days, y=lead_df.material_type, orientation="h",
-    marker_color=theme.ACCENT_2,
+    marker_color=theme.TEAL_2,
     text=[f"{lead:.1f}d · {rate:.1%}"
           for lead, rate in zip(lead_df.avg_lead_days, lead_df.on_time_rate, strict=True)],
     textposition="outside", cliponaxis=False,
