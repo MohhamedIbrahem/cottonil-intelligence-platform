@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
+import pandas as pd
 import streamlit as st
 
 from pipeline import config
@@ -66,8 +67,24 @@ def previous_period(start: date, end: date, mode: str) -> tuple[date, date] | No
     return shift_one_year(start), shift_one_year(end)
 
 
-def period_params(start: date, end: date) -> tuple[date, date]:
-    return start, end
+def window_label(window: tuple[date, date] | None, empty: str = "n/a") -> str:
+    """Render a comparison window as 'Oct 2025 – Oct 2026'."""
+    if not window:
+        return empty
+    start, end = window
+    return f"{start:%b %Y} \u2013 {end:%b %Y}"
 
 
-PERIOD_WHERE = "BETWEEN ? AND ?"
+def delta_label(
+    current: float,
+    previous: float | None,
+    *,
+    label: str,
+    lower_is_better: bool = False,
+) -> tuple[str, bool, bool]:
+    """Return (delta text, arrow up, is good) against a comparison window."""
+    if previous is None or pd.isna(previous) or previous == 0:
+        return "n/a", True, False
+    pct = float(current) / float(previous) - 1.0
+    up = pct >= 0
+    return f"{pct:+.1%} vs {label}", up, up == (not lower_is_better)

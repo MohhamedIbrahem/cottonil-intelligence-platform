@@ -8,6 +8,7 @@ naive prior slice.
 from __future__ import annotations
 
 import sys
+from functools import partial
 from pathlib import Path
 
 _FILE = Path(__file__).resolve()
@@ -18,11 +19,16 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, previous_period, render_period_selector
+from app.filters import (
+    DATA_END,
+    delta_label,
+    previous_period,
+    render_period_selector,
+    window_label,
+)
 
 st.set_page_config(
     page_title="Executive Overview · Cottonil",
-    page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -32,15 +38,13 @@ theme.apply_theme()
 start, end, label, mode = render_period_selector()
 prev_window = previous_period(start, end, mode)
 
-st.title("📊 Executive Overview")
-st.caption(
+theme.page_header(
+    "Executive Overview",
     f"Reporting period: **{label}** · figures include guest checkout (audit A4) "
-    f"· data through {DATA_END.isoformat()}"
+    f"· data through {DATA_END.isoformat()}",
+    eyebrow="Core performance",
+    badges=('Board view',),
 )
-
-if not st.session_state.get("_exec_toast_shown"):
-    st.toast("Loaded from data/cottonil.duckdb (read-only)", icon="🔌")
-    st.session_state["_exec_toast_shown"] = True
 
 
 # ----------------------------------------------------------------- queries ---
@@ -65,25 +69,14 @@ def _kpi_row(window: tuple) -> pd.Series:  # type: ignore[type-arg]
         """,
         (s, e),
     )
-    return pd.concat([net, pd.Series({"returned_orders": int(returned or 0)})])
+    net["returned_orders"] = int(returned or 0)
+    return net
 
 
 cur = _kpi_row((start, end))
 prior = _kpi_row(prev_window) if prev_window else None
-prev_label = (
-    f"{prev_window[0].strftime('%b %Y')} \u2013 {prev_window[1].strftime('%b %Y')}"
-    if prev_window else "no comparison window"
-)
-
-
-def _delta(current: float, previous: float | None, *, lower_is_better: bool = False) -> tuple[str, bool, bool]:
-    """Return (delta_text, delta_up, delta_good) for a KPI card."""
-    if previous is None or pd.isna(previous) or previous == 0:
-        return "n/a", True, False
-    pct = float(current) / float(previous) - 1.0
-    up = pct >= 0
-    good = up == (not lower_is_better)
-    return f"{pct:+.1%} vs {prev_label}", up, good
+prev_label = window_label(prev_window, empty="no comparison window")
+_delta = partial(delta_label, label=prev_label)
 
 
 rate_cur = float(cur.returned_orders) / max(float(cur.orders), 1)
@@ -132,7 +125,7 @@ trend_fig = go.Figure()
 trend_fig.add_trace(go.Scatter(
     x=trend.month, y=trend.net, name="Net sales",
     mode="lines+markers", line={"width": 3, "color": theme.ACCENT_2},
-    fill="tozeroy", fillcolor="rgba(86,204,242,0.12)",
+    fill="tozeroy", fillcolor=theme.ACCENT_2_SOFT,
     hovertemplate="%{x|%b %Y}: EGP %{y:,.0f}<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(
@@ -214,7 +207,7 @@ chan = data.q(
 c_col, ch_col = st.columns(2)
 c_fig = go.Figure(go.Pie(
     hole=0.56, labels=cat.category, values=cat.net,
-    marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT},
+    marker={"colors": theme.COLORS}, textinfo="percent",
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent})<extra></extra>",
 ))
 c_fig.update_layout(title="Category mix (net sales)")

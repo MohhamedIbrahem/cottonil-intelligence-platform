@@ -28,7 +28,7 @@ Each user story is independently demoable. We build Core 5 dashboards + assistan
 
 ## Additional Constraints
 
-- **Technology stack (locked for Phase 1)**: Python 3.12, uv for env management, DuckDB, Polars/pandas, Streamlit multipage app with Plotly, pytest. Streamlit pages follow the Cottonil navy/blue dark theme.
+- **Technology stack (locked for Phase 1)**: Python 3.12, uv for env management, DuckDB, Polars/pandas, Streamlit multipage app with Plotly, pytest. Streamlit pages follow the Cottonil light theme with blue accents.
 - **Currency**: all monetary reporting in EGP. The PDF's wholesale page uses USD ($M) — normalize to EGP and document.
 - **Reporting period**: default "Last 12 months" (data ends 2026-10-18); calendar-year and all-time filters selectable. The mockup's "Jan 2024–Dec 2024" is one selectable period, not the default.
 - **Language**: UI in English; entity names stored as found in source (Arabic for branch/customer/product names) and rendered as-is.

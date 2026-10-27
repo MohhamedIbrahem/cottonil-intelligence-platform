@@ -75,13 +75,20 @@ def test_guard_caps_rows_and_lists_sources():
 # ---------------------------------------------------------------- schemarxjs --
 def test_schema_docs_nonempty_and_complete():
     text = schema_docs.schema_text()
-    for view in ("sales_enriched", "monthly_sales", "stock_latest", "customer_profile"):
+    for view in (
+        "sales_enriched", "monthly_sales", "stock_latest", "customer_profile",
+        "demand_monthly", "sku_monthly", "channel_monthly",
+        "replenishment_signals", "customer_clv", "workforce_monthly", "expansion_gap",
+    ):
         assert f"views.{view}" in text
     assert "order_date" in text and "net_sales" in text
     assert "NOT queryable" in text          # raw facts excluded tell
     assert "tricks" not in text.lower()     # no exec detail leakage
     # The metric notes must mention the anomaly policies it relies on:
-    for token in ("A1", "A2", "A3", "A4", "A5", "refund_capped", "attributed_net_real"):
+    for token in (
+        "A1", "A2", "A3", "A4", "A5", "A11", "A12", "A13", "A14", "A15", "A16", "A17",
+        "refund_capped", "attributed_net_real",
+    ):
         assert token in text, token
 
 
@@ -126,7 +133,7 @@ def test_write_request_is_refused_without_executing():
 
 def test_engine_surfaces_garbage_sql_as_refusal():
     def chat(messages, **_):
-        return "I'm a helpful assistant, not an SQL generator. 🌸"
+        return "I'm a helpful assistant, not an SQL generator."
 
     result = engine.ask("hello", chat_fn=chat)
     assert result.refusal is True
@@ -239,7 +246,7 @@ def test_goldset_live_accuracy_report():
     print("\nGoldset report (live provider chain):")
     for id_, kind, ok, why, provider in rows:
         tag = f" via {provider}" if provider else ""
-        print(f"  {'✅' if ok else '❌'} {id_} [{kind}]{tag} {why}")
+        print(f"  {'PASS' if ok else 'FAIL'} {id_} [{kind}]{tag} {why}")
     accuracy = passed / len(rows)
     print(f"Accuracy: {passed}/{len(rows)} = {accuracy:.1%}")
     assert accuracy >= 0.80, f"goldset accuracy {accuracy:.1%} below release gate 80%"

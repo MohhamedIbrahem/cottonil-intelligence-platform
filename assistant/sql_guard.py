@@ -28,8 +28,11 @@ ALLOWED_RAW_DIMS = frozenset({
 ALLOWED_VIEW_NAMES = frozenset({
     "sales_enriched", "monthly_sales", "branch_daily", "branch_summary",
     "product_overview", "top_products", "stock_monthly", "stock_status",
-    "stock_latest", "returns_enriched", "supplier_pos", "customer_rfm",
-    "customer_profile", "campaigns_clean",
+    "stock_latest", "delivery_ops", "transfer_ops", "returns_enriched",
+    "supplier_pos", "procurement_monthly", "customer_rfm", "customer_profile",
+    "wholesale_accounts", "campaigns_clean", "demand_monthly", "product_monthly",
+    "sku_monthly", "channel_monthly", "replenishment_signals", "customer_clv",
+    "workforce_monthly", "expansion_gap",
 })
 
 

@@ -19,11 +19,15 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, previous_period, render_period_selector
+from app.filters import (
+    DATA_END,
+    previous_period,
+    render_period_selector,
+    window_label,
+)
 
 st.set_page_config(
     page_title="Branch Performance · Cottonil",
-    page_icon="🏬",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -69,16 +73,15 @@ cur_b["growth"] = np.where(
 cur_b = cur_b.sort_values("net", ascending=False).reset_index(drop=True)
 cur_b["rank"] = cur_b.index + 1
 
-st.title("🏬 Branch & Governorate Performance")
-st.caption(
+theme.page_header(
+    "Branch & Governorate Performance",
     f"Reporting period: **{label}** · {len(cur_b)} active branches · "
-    f"growth = same calendar-span one year earlier · data through {DATA_END.isoformat()}"
+    f"growth = same calendar-span one year earlier · data through {DATA_END.isoformat()}",
+    eyebrow="Commercial performance",
+    badges=('Store league table',),
 )
 
-prev_label = (
-    f"{prev_window[0].strftime('%b %Y')} \u2013 {prev_window[1].strftime('%b %Y')}"
-    if prev_window else "no window"
-)
+prev_label = window_label(prev_window, empty="no window")
 
 k_net = float(cur_b.net.sum())
 k_net_prior = float(cur_b.prior_net.sum()) if prev_window else None
@@ -106,7 +109,7 @@ st.divider()
 table = cur_b[["branch", "governorate", "net", "growth", "orders", "aov"]].copy()
 table["growth"] = table.growth.map(lambda v: "n/a" if pd.isna(v) else f"{v:+.1%}")
 styled = table.style.map(
-    lambda v: "color: #8FA6C9;" if str(v) == "n/a"
+    lambda v: f"color: {theme.TEXT_MUTED};" if str(v) == "n/a"
     else f"color: {theme.GOOD if str(v).startswith('+') else theme.BAD}; font-weight: 600;",
     subset=["growth"],
 )
@@ -121,7 +124,11 @@ st.dataframe(
         "aov": st.column_config.NumberColumn("Avg basket (EGP)", format="%.0f"),
     },
 )
-st.caption("Top of the table = highest net in the window. Growth is highlighted green▲ / red▼; 'n/a' = branch did not sell in the comparison window (new or dataset boundary).")
+st.caption(
+    "Top of the table = highest net in the window. Growth is shown with a direction "
+    "arrow and a good/bad status; 'n/a' = branch did not sell in the comparison window "
+    "(new or dataset boundary)."
+)
 
 # -------------------------------------- governorate revenue + growth (T061) --
 gov_c = cur_b.groupby("governorate", as_index=False).agg(
@@ -136,7 +143,7 @@ gov_col, sc_col = st.columns([1, 1])
 gov_fig = go.Figure(go.Bar(
     x=gov_c.share, y=gov_c.governorate, orientation="h",
     marker={"color": gov_c.growth.fillna(0),
-            "colorscale": [[0.0, theme.BAD], [0.5, "#3A4E7A"], [1.0, theme.GOOD]],
+            "colorscale": [[0.0, theme.BAD], [0.5, theme.NEUTRAL], [1.0, theme.GOOD]],
             "cmin": -0.3, "cmax": 0.3, "showscale": False},
     text=[theme.fmt_pct(s) + (f" ({g:+.0%})" if pd.notna(g) else "")
           for s, g in zip(gov_c.share, gov_c.growth, strict=True)],
@@ -162,9 +169,9 @@ sc_fig = go.Figure(go.Scatter(
         "opacity": 0.8,
         "line": {"color": theme.TEXT, "width": 0.5},
     },
-    customdata=np.stack([sc.branch, sc.governorate, sc.orders, sc.growth], axis=-1),
+    customdata=np.stack([sc.branch, sc.governorate, sc.growth], axis=-1),
     hovertemplate="%{customdata[0]} (%{customdata[1]})<br>"
-                  "Net: EGP %{x:,.0f}<br>Growth: %{customdata[3]:+.1%}<extra></extra>",
+                  "Net: EGP %{x:,.0f}<br>Growth: %{customdata[2]:+.1%}<extra></extra>",
 ))
 sc_fig.add_hline(y=median_growth, line={"color": theme.TEXT_MUTED, "width": 1, "dash": "dot"})
 sc_fig.add_vline(x=median_net, line={"color": theme.TEXT_MUTED, "width": 1, "dash": "dot"})

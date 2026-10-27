@@ -28,16 +28,17 @@ def data_branches() -> list[str]:
 
 st.set_page_config(
     page_title="AI Assistant · Cottonil",
-    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 theme.apply_theme()
 
-st.title("🤖 Business Assistant")
-st.caption(
+theme.page_header(
+    "Business Assistant",
     "Read-only · grounded in data/cottonil.duckdb · every answer shows its SQL · "
-    f"data through {config.DATA_END_DATE} · EGP"
+    f"data through {config.DATA_END_DATE} · EGP",
+    eyebrow="AI assistant",
+    badges=('Read-only SQL', 'Arabic + English'),
 )
 
 VIEW_PAGE_MAP = {
@@ -45,8 +46,6 @@ VIEW_PAGE_MAP = {
     "monthly_sales": "pages/1_Executive_Overview.py",
     "top_products": "pages/2_Sales_Performance.py",
     "product_overview": "pages/2_Sales_Performance.py",
-    "campaigns_clean": "pages/2_Sales_Performance.py",
-    "returns_enriched": "pages/2_Sales_Performance.py",
     "branch_daily": "pages/3_Branch_Performance.py",
     "branch_summary": "pages/3_Branch_Performance.py",
     "stock_monthly": "pages/4_Inventory_Stock.py",
@@ -54,6 +53,21 @@ VIEW_PAGE_MAP = {
     "stock_latest": "pages/4_Inventory_Stock.py",
     "customer_rfm": "pages/5_Customer_Intelligence.py",
     "customer_profile": "pages/5_Customer_Intelligence.py",
+    "delivery_ops": "pages/7_Supply_Chain.py",
+    "transfer_ops": "pages/7_Supply_Chain.py",
+    "supplier_pos": "pages/8_Procurement.py",
+    "procurement_monthly": "pages/8_Procurement.py",
+    "returns_enriched": "pages/9_Returns_Quality.py",
+    "campaigns_clean": "pages/10_Marketing_ROI.py",
+    "wholesale_accounts": "pages/11_Wholesale.py",
+    "demand_monthly": "pages/12_Demand_Forecast.py",
+    "channel_monthly": "pages/14_Omnichannel.py",
+    "product_monthly": "pages/15_Product_Profitability.py",
+    "sku_monthly": "pages/15_Product_Profitability.py",
+    "replenishment_signals": "pages/16_Replenishment.py",
+    "customer_clv": "pages/17_CLV_Churn.py",
+    "workforce_monthly": "pages/18_Workforce_Productivity.py",
+    "expansion_gap": "pages/19_Expansion_Gap.py",
 }
 
 
@@ -74,13 +88,13 @@ def _memory() -> list[dict[str, str]] | None:
                 "role": "assistant",
                 "content": f"SQL: {m['sql']}\nAnswer: {m.get('narration', '')[:600]}",
             })
-    return turns[-8:] or None
+    return turns or None
 
 if "assistant_msgs" not in st.session_state:
     st.session_state.assistant_msgs = []
 
 with st.sidebar:
-    if st.button("🧹 Clear conversation", use_container_width=True):  # T101 reset
+    if st.button("Clear conversation", use_container_width=True):  # T101 reset
         st.session_state.assistant_msgs = []
         st.session_state.assistant_pending = None
         st.rerun()
@@ -109,35 +123,36 @@ if not st.session_state.assistant_llm_ready:
             "The assistant LLM is not reachable. Keys live in `.env` (gitignored) — "
             "verify `GEMINI_API_KEY` / `GROQ_API_KEY` and reload this page.\n\n"
             "| Provider | Role | Model |\n|---|---|---|\n" + rows,
-            icon="🔌",
         )
     else:
         st.warning(
             "No assistant LLM provider is configured. Add `GEMINI_API_KEY` + "
             "`GEMINI_MODEL` (primary) and `GROQ_API_KEY` + `GROQ_MODEL` (fallback) "
             "to `.env`, then reload this page.",
-            icon="🔌",
         )
     st.stop()
 
 # ------------------------------------------------------- shortcut rail (T100) --
 with st.container(border=True):
-    st.markdown("#### ⚡ Shortcuts")
+    theme.section_header(
+        "Shortcuts",
+        "Start with a prepared question, or narrow it to a branch, customer or supplier.",
+    )
     s_cols = st.columns(3)
     with s_cols[0]:
-        if st.button("📈 Get insights", use_container_width=True):
+        if st.button("Get insights", use_container_width=True):
             _queue_question(
                 "Give me an executive digest of the whole dataset: total net sales, orders, "
                 "active customers, average order value, and the best-selling three categories."
             )
     with s_cols[1]:
-        if st.button("📝 View report", use_container_width=True):
+        if st.button("View report", use_container_width=True):
             _queue_question(
                 "Write a short report for the last complete month (September 2026): net sales, "
                 "orders, active customers, top-3 branches, and anything notable about returns."
             )
     with s_cols[2]:
-        if st.button("📦 Check inventory", use_container_width=True):
+        if st.button("Check inventory", use_container_width=True):
             _queue_question(
                 "Which locations and categories have the highest stockout risk right now "
                 "(latest stock month)? Show the top 10 with their closing units and value."
@@ -151,7 +166,7 @@ with st.container(border=True):
             index=None,
             placeholder="pick a branch…",
         )
-        if st.button("🏬 Analyze branch", use_container_width=True,
+        if st.button("Analyze branch", use_container_width=True,
                      disabled=not branch_choice):
             _queue_question(
                 f"Show KPIs for branch '{branch_choice}' for calendar 2026: net sales, "
@@ -161,18 +176,29 @@ with st.container(border=True):
         customer_choice = st.text_input(
             "Customer insights — id", placeholder="e.g. C0060015", key="cust_id_input"
         )
-        if st.button("👤 Analyze customer", use_container_width=True,
+        if st.button("Analyze customer", use_container_width=True,
                      disabled=not customer_choice.strip()):
             _queue_question(
                 f"Profile customer {customer_choice.strip()}: their RFM tier, total orders, "
                 "lifetime value, and their most recent order date."
             )
     with t2_cols[2]:
-        if st.button("🚚 Supplier information", use_container_width=True):
+        if st.button("Supplier information", use_container_width=True):
             _queue_question(
                 "List the top 10 suppliers by number of purchase orders with their total PO "
                 "value, average lead time in days, and on-time delivery percentage."
             )
+
+with st.expander("How answers are guarded", expanded=False):
+    st.markdown(
+        "- Every generated query is checked by the SQL guard before execution; "
+        "only read-only statements against allow-listed curated views and dimensions "
+        "can run.\n"
+        "- The SQL used for each answer is always available in the message, and the "
+        "exported answer keeps the same text you see in the chat.\n"
+        "- The assistant is grounded in `data/cottonil.duckdb` only. It does not "
+        "browse the web, mutate data or receive credentials from this page."
+    )
 
 st.divider()
 
@@ -191,7 +217,7 @@ if pending:
         "attempts": result.attempts, "provider": result.provider,
     })
     if result.df is None and result.sql == "" and not result.refusal:
-        st.error(result.error, icon="🔌")
+        st.error(result.error)
 
 prompt = st.chat_input("Ask in English or Arabic…")
 if prompt:
@@ -200,15 +226,15 @@ if prompt:
 # ---------------------------------------------------------- render history --
 for index, message in enumerate(st.session_state.assistant_msgs):
     if message["role"] == "user":
-        with st.chat_message("user", avatar="🧍"):
+        with st.chat_message("user"):
             st.markdown(message["content"])
         continue
 
     refusal = message.get("refusal", False)
-    with st.chat_message("assistant", avatar="🤖"):
+    with st.chat_message("assistant"):
         narration = message.get("narration") or ""
         if refusal:
-            st.warning(narration, icon="🛑")
+            st.warning(narration)
         else:
             st.markdown(narration)
 
@@ -217,20 +243,20 @@ for index, message in enumerate(st.session_state.assistant_msgs):
             st.caption(f"via {provider} (fallback)")
 
         if message.get("truncated"):
-            st.info("Result truncated at 200 rows.", icon="✂️")
+            st.info("Result truncated at 200 rows.")
 
         if message.get("df") is not None:
             st.dataframe(message["df"], hide_index=True)
 
         if message.get("sql"):
-            with st.expander("🔍 SQL used for this answer"):
+            with st.expander("SQL used for this answer"):
                 st.code(message["sql"], language="sql")
                 attempts = message.get("attempts") or []
                 if attempts:
                     st.caption(" · ".join(attempts))
 
         if narration and not refusal:
-            with st.expander("📋 Copy / export this answer"):
+            with st.expander("Copy / export this answer"):
                 st.code(narration, language="markdown")  # built-in copy button
 
         deep_link = next(
@@ -239,6 +265,6 @@ for index, message in enumerate(st.session_state.assistant_msgs):
             None,
         )
         if deep_link:
-            st.button("📊 Matched dashboard",
+            st.button("Open matched dashboard",
                       key=f"link-{index}-{deep_link}",
                       on_click=st.switch_page, args=(deep_link,))

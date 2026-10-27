@@ -15,7 +15,7 @@ Build a local-first analytics web app: the 25 Cottonil CSVs are loaded into a ty
 | Language/runtime | Python 3.12 (uv-managed venv; NOT the broken Anaconda base) |
 | Storage/analytics | DuckDB single-file DB, prebuilt views, Parquet-friendly |
 | Ingestion | Python stdlib pandas + DuckDB COPY, typed explicitly |
-| UI | Streamlit multipage + Plotly (dark navy theme per deck) |
+| UI | Streamlit multipage + Plotly (light theme with blue accents) |
 | Assistant LLM | Generic OpenAI-compatible client; default endpoint = local Ollama (`http://localhost:11434/v1`), cloud model optional via env |
 | NL→SQL guard | SQL parser validation (SELECT-only, allowlisted views), LIMIT enforced, schema row-limits |
 | Testing | pytest (pipeline + gold question set) |
@@ -35,7 +35,7 @@ Cottonil/
 ├── app/                           # Streamlit multipage app
 │   ├── Home.py                    # landing (Executive Overview = US2)
 │   ├── pages/                     # 1_Sales.py … 5_Assistant.py
-│   ├── theme.py                   # navy palette, KPI card component
+│   ├── theme.py                   # light palette, KPI card component
 │   └── filters.py                 # shared period/global filter logic
 ├── pipeline/
 │   ├── build_db.py                # load CSVs → duckdb (CLI entry)
@@ -75,7 +75,7 @@ Question → which story: builds US1 only; every later story depends on it.
 
 ## Phase 2 — App Shell & Design System
 
-- `app/theme.py` navy palette (deck-style: dark indigo cards, blue accents, green/red delta badges), `kpi_card()` component, `filters.py` shared period state (`st.session_state`).
+- `app/theme.py` light palette (deck-style: white cards, navy text, blue accents, green/red delta badges), `kpi_card()` component, `filters.py` shared period state (`st.session_state`).
 - `app/Home.py` = Executive Overview (US2) if Phase 3 not finished, otherwise shell + nav.
 - Data notes expander per page (FR-012).
 

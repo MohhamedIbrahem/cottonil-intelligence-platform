@@ -1,6 +1,6 @@
 # PROJECT PLAN — Cottonil Data, AI & Business Intelligence (HVIA Task 3)
 
-**Created**: 2026-10-24 · **Status**: Approved scope = Feature 001 in flight · **Process**: GitHub Spec Kit (opencode integration, initialized in repo).
+**Created**: 2026-10-24 · **Status**: Features 001–004 shipped (2026-10-26) · **Process**: GitHub Spec Kit (opencode integration, initialized in repo).
 
 ## 1. What this project is
 
@@ -20,7 +20,7 @@ The 23-image PDF deck is treated as the **product brief + design language** (nav
 | Deliverable | Web app: dashboards + AI chat (Streamlit + DuckDB local) |
 | Week-1 scope | Core 5 dashboards + assistant (`specs/001-core-platform`) |
 | Spec process | GitHub Spec Kit — initialized; constitution ratified; feature 001 spec/plan/tasks written |
-| Out of scope v1 | ESG, Planogram, Loss Prevention, Store Expansion dashboards (no data); deployment/auth |
+| Out of scope v1 | ESG, Planogram, Loss Prevention dashboards (no data); full store-expansion site selection (only the A17 coverage proxy shipped); deployment/auth |
 
 ## 3. Tooling & skills required
 
@@ -58,6 +58,8 @@ Follow-ups (est.): 002 supply/marketing ≈ 6d · 003 analytics ≈ 8d · 004 op
 | 002 Supply & marketing edge | Supply chain, Procurement, Returns, Marketing ROI, Wholesale | import USD conversion table, attribution method doc |
 | 003 Advanced analytics | Forecasting, Pricing, Omnichannel-lite, Product margin, Replenishment, CLV/Churn | statsmodels dep; rules-based reorder |
 | 004 Optional lites | Workforce-lite (labor), Expansion-gap view — only if owner wants | labeled proxies |
+
+**Ship status**: 004 shipped 2026-10-26 as p17 Workforce Productivity (`pages/18`, payroll-covered labor, A16) and p12 Store Expansion gap proxy (`pages/19`, governorate coverage intensity, A17). No synthetic data was added; the remaining missing deck pages stay explicit out-of-scope.
 
 ## 6. Working agreements
 

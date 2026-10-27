@@ -7,6 +7,7 @@ filter that scopes every chart on the page. All numbers from views.* (read-only)
 from __future__ import annotations
 
 import sys
+from functools import partial
 from pathlib import Path
 
 _FILE = Path(__file__).resolve()
@@ -17,11 +18,16 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, previous_period, render_period_selector
+from app.filters import (
+    DATA_END,
+    delta_label,
+    previous_period,
+    render_period_selector,
+    window_label,
+)
 
 st.set_page_config(
     page_title="Sales Performance · Cottonil",
-    page_icon="💰",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -37,14 +43,12 @@ categories = data.q(
 category = st.sidebar.selectbox("Category", [_all_cats, *categories], index=0)
 cat_where = "" if category == _all_cats else " AND category_en = ?"
 
-if not st.session_state.get("_sales_toast_shown"):
-    st.toast(f"Sales scope: {category}", icon="💰")
-    st.session_state["_sales_toast_shown"] = True
-
-st.title("💰 Sales Performance")
-st.caption(
+theme.page_header(
+    "Sales Performance",
     f"Reporting period: **{label}** · category scope: **{category}** · "
-    f"guests included in revenue (A4) · EGP excl. 14% VAT · data through {DATA_END.isoformat()}"
+    f"guests included in revenue (A4) · EGP excl. 14% VAT · data through {DATA_END.isoformat()}",
+    eyebrow="Commercial performance",
+    badges=('Category scoped',),
 )
 
 params = (start, end) if category == _all_cats else (start, end, category)
@@ -63,19 +67,8 @@ def _sales_kpis(window: tuple) -> pd.Series:  # type: ignore[type-arg]
 cur = _sales_kpis((start, end))
 prev_window = previous_period(start, end, mode)
 prior = _sales_kpis(prev_window) if prev_window else None
-prev_label = (
-    f"{prev_window[0].strftime('%b %Y')} \u2013 {prev_window[1].strftime('%b %Y')}"
-    if prev_window else "no window"
-)
-
-
-def _delta(current: float, previous: float | None) -> tuple[str, bool, bool]:
-    """(delta_text, arrow_up, good_bad) - on this page every metric is 'up is good'."""
-    if previous is None or pd.isna(previous) or previous == 0:
-        return "n/a", True, False
-    pct = float(current) / float(previous) - 1.0
-    up = pct >= 0
-    return f"{pct:+.1%} vs {prev_label}", up, up
+prev_label = window_label(prev_window, empty="no window")
+_delta = partial(delta_label, label=prev_label)
 
 
 aov_cur = float(cur.net) / max(float(cur.orders), 1)
@@ -110,7 +103,7 @@ trend = data.q(
     WHERE order_date BETWEEN ? AND ?
     """
     + cat_where + " GROUP BY ym ORDER BY ym",
-    params + (),
+    params,
 ).dropna(subset=["net"])
 trend["month"] = pd.to_datetime(trend.ym + "-01")
 
@@ -118,7 +111,7 @@ trend_fig = go.Figure()
 trend_fig.add_trace(go.Scatter(
     x=trend.month, y=trend.net, name="Net sales",
     mode="lines+markers", line={"width": 3, "color": theme.ACCENT_2},
-    fill="tozeroy", fillcolor="rgba(86,204,242,0.12)",
+    fill="tozeroy", fillcolor=theme.ACCENT_2_SOFT,
     hovertemplate="%{x|%b %Y}: EGP %{y:,.0f}<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(
@@ -147,7 +140,7 @@ top_products = data.q(
 )
 top_products = top_products.head(15)
 
-st.markdown("#### Top products in this window")
+theme.section_header("Top products in this window")
 st.dataframe(
     top_products,
     hide_index=True,
@@ -187,7 +180,6 @@ else:
 mix_fig = go.Figure(go.Pie(
     hole=0.56, labels=donut_src.name, values=donut_src.net,
     marker={"colors": theme.COLORS}, textinfo="percent",
-    textfont={"color": theme.TEXT},
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent})<extra></extra>",
 ))
 mix_fig.update_layout(title=donut_title)

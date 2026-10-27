@@ -16,7 +16,7 @@
 
 ## Phase 1: Foundational — Data Pipeline (US1, P1)
 
-**⚠️ CRITICAL**: No user-story work until this passes DQ tests.
+**CRITICAL**: No user-story work until this passes DQ tests.
 
 - [x] T010 `pipeline/__init__.py`, `pipeline/config.py` (paths, dataset constants incl. dataset end date 2026-10-18, encoding utf-8-sig)
 - [x] T011 `pipeline/build_db.py` — load all 25 CSVs into `raw` schema with explicit types; deterministic table order; transaction per table; fail on missing file
@@ -33,19 +33,19 @@
 - [x] T022 `tests/test_pipeline.py` — run build on tmp copy, assert view row counts >0, run `pipeline/checks.py` expecting exit 0
 - [x] T023 Wire `build`/`checks` scripts to uv project scripts; verify `uv run build && uv run checks`
 
-**Checkpoint**: US1 done — pipeline builds, DQ tests green ✅ (2026-10-25: build EXIT 0, 34/34 gates PASS, 11/11 tests pass in ~20 s; A9 catalog-namespace finding added to DATA_AUDIT)
+**Checkpoint**: US1 done — pipeline builds, DQ tests green (2026-10-25: build EXIT 0, 34/34 gates PASS, 11/11 tests pass in ~20 s; A9 catalog-namespace finding added to DATA_AUDIT)
 
 ## Phase 2: App Shell (shared UI)
 
-- [x] T030 `app/theme.py` — navy palette constants + `kpi_card(title, value, delta, help_text)` component + chart style
+- [x] T030 `app/theme.py` — light palette constants + `kpi_card(title, value, delta, help_text)` component + chart style
 - [x] T031 [P] `app/filters.py` — period selector state (Last 12 months / calendar-year / all), `where_period(df)` helper, dataset-last-date aware labels + `st.session_state`
 - [x] T032 [P] `app/data.py` — DuckDB connection singleton + `q(view)` convenience returning pandas df
 - [x] T033 `app/Home.py` — app title, nav, landing = Executive Overview placeholder; shared filter render
-- [x] T034 `streamlit.config.toml` theme config; verify dark navy look
+- [x] T034 `streamlit.config.toml` theme config; verify light theme look
 
-**Checkpoint**: shell runs, shared filter works ✅ (2026-10-25: headless server health/main 200, AppTest 0 exceptions, 34/34 DQ + ruff clean; home KPIs read real views)
+**Checkpoint**: shell runs, shared filter works (2026-10-25: headless server health/main 200, AppTest 0 exceptions, 34/34 DQ + ruff clean; home KPIs read real views)
 
-## Phase 3: US2 Executive Overview (P2) 🎯 demo-able core
+## Phase 3: US2 Executive Overview (P2) demo-able core
 
 - [x] T040 Executive page KPI cards: Net Sales, Gross Profit (sum margin_EGP), Orders, Active Customers, Return Rate % with YoY deltas; metric-definition tooltips from AUDIT doc
 - [x] T041 Monthly sales & profit trend line (period-aware)
@@ -53,7 +53,7 @@
 - [x] T043 [P] Category mix donut + channel mix donut
 - [x] T044 Data-note expander content per page (FR-012)
 
-**Checkpoint**: deck p2 exists with real data ✅ (2026-10-25: AppTest 0 exceptions in all 3 period modes; Last-12-months KPIs: net EGP 293.2M +36.3% YoY, GP EGP 112.4M, orders 100.3K, active customers 51.5K, return rate 5.3%)
+**Checkpoint**: deck p2 exists with real data (2026-10-25: AppTest 0 exceptions in all 3 period modes; Last-12-months KPIs: net EGP 293.2M +36.3% YoY, GP EGP 112.4M, orders 100.3K, active customers 51.5K, return rate 5.3%)
 
 ## Phase 4: US3 Sales Performance (P3)
 
@@ -63,7 +63,7 @@
 - [x] T053 [P] Governorate breakdown bar
 - [x] T054 Data notes expander
 
-**Checkpoint**: US3 done independently ✅ (2026-10-25: AppTest 0 exceptions in All-categories + single-category modes; cards: net 293.2M +36.3% (matches Executive), orders 100.3K, AOV 2.9K +23.2%, items/order 6.22 -1.3%, units 623.7K)
+**Checkpoint**: US3 done independently (2026-10-25: AppTest 0 exceptions in All-categories + single-category modes; cards: net 293.2M +36.3% (matches Executive), orders 100.3K, AOV 2.9K +23.2%, items/order 6.22 -1.3%, units 623.7K)
 
 ## Phase 5: US4 Branch Performance (P3)
 
@@ -72,7 +72,7 @@
 - [x] T062 [P] Growth % vs revenue scatter/star-ish charts (deck p4 style imitation, no map)
 - [x] T063 Data notes expander
 
-**Checkpoint**: US4 done ✅ (2026-10-25: AppTest 0 exceptions in L12M + All-time; 80/80 branches active in L12M; growth-colored table + gov growth-color bar + quadrant scatter)
+**Checkpoint**: US4 done (2026-10-25: AppTest 0 exceptions in L12M + All-time; 80/80 branches active in L12M; growth-colored table + gov growth-color bar + quadrant scatter)
 
 **Checkpoint**: US4 done
 
@@ -84,7 +84,7 @@
 - [x] T073 [P] Risk alerts table (top 10 locations×category)
 - [x] T074 Data notes expander
 
-**Checkpoint**: US5 done ✅ (2026-10-25: AppTest 0 exceptions; snapshot 2026-10: 1.8M units, EGP 346.0M value — matches audit A7; 2.2% at-risk ≥0.70 of 1472 cells; 114 low-stock cells)
+**Checkpoint**: US5 done (2026-10-25: AppTest 0 exceptions; snapshot 2026-10: 1.8M units, EGP 346.0M value — matches audit A7; 2.2% at-risk ≥0.70 of 1472 cells; 114 low-stock cells)
 
 **Checkpoint**: US5 done
 
@@ -96,7 +96,7 @@
 - [x] T083 [P] Customer lookup (search by name/id → order history)
 - [x] T084 Data notes expander
 
-**Checkpoint**: Core 5 complete ✅ (2026-10-25: RFM table + top-10 LTV + lookup live; L12M: 51.5K active, 41.1% repeat; smoke test suite `tests/test_pages_smoke.py` added - AppTest across all pages × 3 modes, 19/19 full suite green; lookup fixed to string ids C0xxxxxx)
+**Checkpoint**: Core 5 complete (2026-10-25: RFM table + top-10 LTV + lookup live; L12M: 51.5K active, 41.1% repeat; smoke test suite `tests/test_pages_smoke.py` added - AppTest across all pages × 3 modes, 19/19 full suite green; lookup fixed to string ids C0xxxxxx)
 
 ## Phase 8: US7 AI Assistant (P2, depends on Phase 1 + any one dashboard)
 
@@ -109,7 +109,7 @@
 - [x] T096 Refusal tests: write-action denial & out-of-scope (ESG/planogram) returns explicit "not in dataset" message
 - [x] T097 Connection: DuckDB read-only view execution guard; time cap; error surfacing to chat (no raw tracebacks in UI)
 
-**Checkpoint**: US7 done; goldset ≥80% ✅ (2026-10-25: Gemini primary + Groq fallback chain (commit 1ac0acd, llama3.1/Ollama dropped); guard + refusal-contract tests green; goldset LIVE accuracy **19/20 = 95%**, all via Gemini, paced 9.5 s/case for free-tier RPM; engine honors prompt-contract REFUSAL; provider attribution in AskResult; full suite **56 passed / 0 skipped**)
+**Checkpoint**: US7 done; goldset ≥80% (2026-10-25: Gemini primary + Groq fallback chain (commit 1ac0acd, llama3.1/Ollama dropped); guard + refusal-contract tests green; goldset LIVE accuracy **19/20 = 95%**, all via Gemini, paced 9.5 s/case for free-tier RPM; engine honors prompt-contract REFUSAL; provider attribution in AskResult; full suite **56 passed / 0 skipped**)
 
 **Checkpoint**: US7 done; goldset ≥80%
 
@@ -119,7 +119,7 @@
 - [x] T101 [P] Session-scoped conversation memory; reset button; export answer to clipboard
 - [x] T102 [P] Arabic test prompts in goldset (≥3) verified
 
-**Checkpoint**: US8 done; PDF p23 feature set fully mapped ✅ (2026-10-25: 6 shortcut tiles live (insights/report/inventory top-risk/branch picker→KPI+rank/customer-by-id→profile+recency/suppliers PO-value+lead+on-time); memory last-4 turns -> engine context; clear button + copy-expander (st.code clipboard) + truncation flag + deep-link; goldset has 5 Arabic questions (≥3, T102) — full-suite 44 pass + live skip; Ask-Questions IS the chat input)
+**Checkpoint**: US8 done; PDF p23 feature set fully mapped (2026-10-25: 6 shortcut tiles live (insights/report/inventory top-risk/branch picker→KPI+rank/customer-by-id→profile+recency/suppliers PO-value+lead+on-time); memory last-4 turns -> engine context; clear button + copy-expander (st.code clipboard) + truncation flag + deep-link; goldset has 5 Arabic questions (≥3, T102) — full-suite 44 pass + live skip; Ask-Questions IS the chat input)
 
 **Checkpoint**: US8 done; PDF p23 feature set fully mapped
 
@@ -130,7 +130,7 @@
 - [x] T112 [P] Perf: verify each page <3s (time in `st.cache_data` if needed)
 - [x] T113 Record 2-min demo script (chat transcript + screenshots)
 
-**Checkpoint**: Release 001 candidate ✅ (2026-10-25: pages 0.23-0.41s vs 3.0s budget gate `tests/test_pages_perf.py`; assistant probe fail-fast 1.5s; README runbook (pages, LLM, gates, troubleshooting) + scope-matrix ship-status + `docs/DEMO_SCRIPT.md`; full suite **50 passed, 2 skipped** (live-LLM-gated) — ruff clean)
+**Checkpoint**: Release 001 candidate (2026-10-25: pages 0.23-0.41s vs 3.0s budget gate `tests/test_pages_perf.py`; assistant probe fail-fast 1.5s; README runbook (pages, LLM, gates, troubleshooting) + scope-matrix ship-status + `docs/DEMO_SCRIPT.md`; full suite **50 passed, 2 skipped** (live-LLM-gated) — ruff clean)
 
 **Checkpoint**: Release 001 candidate
 

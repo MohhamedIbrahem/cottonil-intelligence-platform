@@ -17,23 +17,23 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, previous_period, render_period_selector
+from app.filters import DATA_END, render_period_selector
 
 st.set_page_config(
     page_title="Customer Intelligence · Cottonil",
-    page_icon="👥",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 theme.apply_theme()
 
-start, end, label, mode = render_period_selector()
-prev_window = previous_period(start, end, mode)
+start, end, label, _ = render_period_selector()
 
-st.title("👥 Customer Intelligence")
-st.caption(
+theme.page_header(
+    "Customer Intelligence",
     f"Window-scoped metrics use **{label}**; RFM tiers are profile facts as of "
-    f"{DATA_END.isoformat()} (immutable by design, A5) · guests excluded per A4"
+    f"{DATA_END.isoformat()} (immutable by design, A5) · guests excluded per A4",
+    eyebrow="Customers",
+    badges=('RFM profile facts',),
 )
 
 # ---------------------------------------------------------------- KPIs (T082) --
@@ -101,10 +101,14 @@ donut_figs = []
 for frame, title in ((seg, "By segment"), (age, "By age band"), (gov, "By governorate")):
     fig = go.Figure(go.Pie(
         hole=0.55, labels=frame.name, values=frame.customers,
-        marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT},
+        marker={"colors": theme.COLORS}, textinfo="percent",
         customdata=frame.customers,
         hovertemplate="%{label}: %{customdata:,} customers (%{percent})<extra></extra>",
     ))
+    if title == "By age band":
+        # Keep the right-hand 20% slice label inside the card in the narrow
+        # three-column layout; the other pies have labels on safe edges.
+        fig.update_traces(domain={"x": [0.02, 0.86], "y": [0.04, 0.96]})
     fig.update_layout(title=title)
     theme.apply_plotly_style(fig)
     donut_figs.append(fig)
@@ -128,7 +132,7 @@ rfm = data.q(
 )
 rfm["share_pct"] = rfm.customers / rfm.customers.sum() * 100.0
 
-st.markdown(f"#### RFM tiers — computed as of dataset end ({DATA_END.isoformat()})")
+theme.section_header(f"RFM tiers — computed as of dataset end ({DATA_END.isoformat()})")
 st.dataframe(
     rfm, hide_index=True,
     column_config={
@@ -152,7 +156,7 @@ top_c = data.q(
     ORDER BY lifetime_value DESC LIMIT 10
     """
 )
-st.markdown("#### Top-10 customers by lifetime value")
+theme.section_header("Top-10 customers by lifetime value")
 st.dataframe(
     top_c, hide_index=True,
     column_config={
@@ -167,7 +171,7 @@ st.dataframe(
 )
 
 # ------------------------------------------------- customer lookup (T083) --
-with st.expander("🔍 Customer lookup - order history", expanded=False):
+with st.expander("Customer lookup - order history", expanded=False):
     query = st.text_input("Search by Arabic name fragment or customer id", value="")
     if query.strip():
         like = f"%{query.strip()}%"

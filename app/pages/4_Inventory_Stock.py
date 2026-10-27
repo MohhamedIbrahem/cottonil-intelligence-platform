@@ -23,24 +23,23 @@ from app.filters import DATA_END, render_period_selector
 
 st.set_page_config(
     page_title="Inventory & Stock · Cottonil",
-    page_icon="📦",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 theme.apply_theme()
 
-start, end, label, mode = render_period_selector()
+start, end, label, _ = render_period_selector()
 
-st.title("📦 Inventory & Stock")
-st.caption(
+theme.page_header(
+    "Inventory & Stock",
     f"Trend window: **{label}** · snapshot KPIs below use the **latest stock month** "
-    f"(dataset ends {DATA_END.isoformat()}) · audit A7 scale policy"
+    f"(dataset ends {DATA_END.isoformat()}) · audit A7 scale policy",
+    eyebrow="Operations",
+    badges=('Latest snapshot',),
 )
 
 # ---------------------------------------------------------------- KPIs (T070) --
-latest_month = data.scalar("SELECT MAX(year_month) FROM views.stock_latest") or data.scalar(
-    "SELECT MAX(year_month) FROM views.stock_monthly"
-)
+latest_month = data.scalar("SELECT MAX(year_month) FROM views.stock_latest")
 snap = data.q(
     """
     SELECT SUM(closing_units) AS units, SUM(closing_stock_value) AS value_egp,
@@ -85,7 +84,6 @@ trend = data.q(
     """,
     (ym_start, ym_end),
 )
-months = sorted(trend.year_month.unique())
 val_fig = go.Figure()
 for loc_type, color in zip(("BRANCH", "WAREHOUSE"), (theme.ACCENT, theme.ACCENT_2), strict=False):
     sub = trend[trend.loc_type == loc_type]
@@ -145,7 +143,7 @@ status = data.q(
 
 cat_fig = go.Figure(go.Pie(
     hole=0.56, labels=cat_plot.category, values=cat_plot.value_egp,
-    marker={"colors": theme.COLORS}, textinfo="percent", textfont={"color": theme.TEXT},
+    marker={"colors": theme.COLORS}, textinfo="percent",
     customdata=cat_plot.units,
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,.0f} units<extra></extra>",
 ))
@@ -154,8 +152,8 @@ theme.apply_plotly_style(cat_fig)
 
 status_fig = go.Figure(go.Pie(
     hole=0.56, labels=status.status, values=status.value_egp,
-    marker={"colors": [theme.WARN, theme.ACCENT_2, theme.ACCENT], "line": {"color": theme.NAVY_BG, "width": 2}},
-    textinfo="label+percent", textfont={"color": theme.TEXT},
+    marker={"colors": [theme.WARN, theme.ACCENT_2, theme.ACCENT], "line": {"color": theme.CARD, "width": 2}},
+    textinfo="label+percent",
     customdata=status.cells,
     hovertemplate="%{label}: EGP %{value:,.0f} (%{percent}) \u00b7 %{customdata:,} cells<extra></extra>",
 ))
@@ -186,10 +184,10 @@ def _risk_style(v: float) -> str:
         return f"color: {theme.BAD}; font-weight: 600;"
     if v >= 0.60:
         return f"color: {theme.WARN}; font-weight: 600;"
-    return "color: #8FA6C9;"
+    return f"color: {theme.TEXT_MUTED};"
 
 
-st.markdown(f"#### Top-10 stockout-risk alerts — {latest_month}")
+theme.section_header(f"Top-10 stockout-risk alerts — {latest_month}")
 st.dataframe(
     alerts.style.map(_risk_style, subset=["risk"]),
     hide_index=True,
