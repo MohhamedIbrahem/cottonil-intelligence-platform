@@ -47,7 +47,7 @@ def _branch_agg(window: tuple) -> pd.DataFrame:
                COUNT(DISTINCT sales_order_id)     AS orders,
                COUNT(DISTINCT customer_id)        AS customers
         FROM views.sales_enriched
-        WHERE order_date BETWEEN ? AND ?{_gf_where}
+        WHERE order_date BETWEEN ? AND ?""" + _gf_where + """
         GROUP BY branch_id
         """,
         (s, e) + _gf_params,
@@ -186,7 +186,7 @@ with sc_col:
 guest_orders = data.scalar(
     """
     SELECT COUNT(DISTINCT sales_order_id) FROM views.sales_enriched
-    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?{_gf_where}
+    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?""" + _gf_where + """
     """,
     (start, end) + _gf_params,
 ) or 0

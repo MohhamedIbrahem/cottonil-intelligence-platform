@@ -107,7 +107,7 @@ def _kpi_row(window: tuple) -> pd.Series:  # type: ignore[type-arg]
                COUNT(DISTINCT sales_order_id) AS orders,
                COUNT(DISTINCT customer_id) AS customers
         FROM views.sales_enriched
-        WHERE order_date BETWEEN ? AND ?{_gf_where}
+        WHERE order_date BETWEEN ? AND ?""" + _gf_where + """
         """,
         (s, e) + _gf_params,
     ).iloc[0]
@@ -116,7 +116,7 @@ def _kpi_row(window: tuple) -> pd.Series:  # type: ignore[type-arg]
         SELECT COUNT(DISTINCT le.sales_order_id)
         FROM views.returns_enriched r
         JOIN views.sales_enriched le ON le.sales_order_id = r.sales_order_id
-        WHERE le.order_date BETWEEN ? AND ?{_gf_where_le}
+        WHERE le.order_date BETWEEN ? AND ?""" + _gf_where_le + """
         """,
         (s, e) + _gf_params_le,
     )
@@ -188,7 +188,7 @@ trend = data.q(
     """
     SELECT ym, SUM(net_sales) AS net, SUM(gross_profit) AS gross_profit
     FROM views.sales_enriched
-    WHERE order_date BETWEEN ? AND ?{_gf_where}
+    WHERE order_date BETWEEN ? AND ?""" + _gf_where + """
     GROUP BY ym ORDER BY ym
     """,
     (start, end) + _gf_params,
@@ -218,7 +218,7 @@ branches = data.q(
     SELECT branch_name_ar, branch_governorate_ar AS governorate,
            SUM(net_sales) AS net, COUNT(DISTINCT sales_order_id) AS orders
     FROM views.sales_enriched
-    WHERE order_date BETWEEN ? AND ?{_gf_where}
+    WHERE order_date BETWEEN ? AND ?""" + _gf_where + """
     GROUP BY 1, 2 ORDER BY net DESC
     """,
     (start, end) + _gf_params,
@@ -264,7 +264,7 @@ with g_col:
 cat = data.q(
     """
     SELECT category_en AS category, SUM(net_sales) AS net
-    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where}
+    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?""" + _gf_where + """
     GROUP BY 1 ORDER BY 2 DESC
     """,
     (start, end) + _gf_params,
@@ -272,7 +272,7 @@ cat = data.q(
 chan = data.q(
     """
     SELECT sales_channel AS channel, SUM(net_sales) AS net
-    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where}
+    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?""" + _gf_where + """
     GROUP BY 1 ORDER BY 2 DESC
     """,
     (start, end) + _gf_params,
@@ -308,7 +308,7 @@ lines_in_window = data.scalar(
 guest_orders = data.scalar(
     """
     SELECT COUNT(DISTINCT sales_order_id) FROM views.sales_enriched
-    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?{_gf_where}
+    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?""" + _gf_where + """
     """,
     (start, end) + _gf_params,
 )

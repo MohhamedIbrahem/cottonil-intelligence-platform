@@ -589,7 +589,7 @@ def _render_panel() -> None:
     columns = st.columns([1, 0.14, 0.14])
     with columns[0]:
         st.markdown(
-            "<div class='assistant-panel-title'>Business Assistant</div>"
+            "<div class='assistant-panel-title'>Ask AI</div>"
             "<div class='assistant-panel-sub'>"
             + (" · ".join(llm.describe_providers()) if ready else "provider not reachable")
             + "</div>",
@@ -632,11 +632,11 @@ def _render_panel() -> None:
 def _render_fab() -> None:
     """Circular fixed button; opens the panel (§7.2)."""
     st.button(
-        "Business Assistant",
+        "Ask AI",
         icon=":material/forum:",
         key="assistant_fab",
         on_click=_open,
-        help="Open the business assistant chat",
+        help="Ask AI — open the business assistant chat",
         width=60,
     )
 

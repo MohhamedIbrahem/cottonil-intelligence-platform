@@ -160,7 +160,7 @@ if category == _all_cats:
     cat_mix = data.q(
         """
         SELECT COALESCE(category_en, 'Unknown') AS name, SUM(net_sales) AS net
-        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where}
+        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?""" + _gf_where + """
         GROUP BY 1 ORDER BY 2 DESC
         """,
         (start, end) + _gf_params,
@@ -170,7 +170,7 @@ else:
     aud_mix = data.q(
         """
         SELECT COALESCE(audience, 'Unspecified') AS name, SUM(net_sales) AS net
-        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where} AND category_en = ?
+        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?""" + _gf_where + """ AND category_en = ?
         GROUP BY 1 ORDER BY 2 DESC
         """,
         (start, end) + _gf_params + (category,),
