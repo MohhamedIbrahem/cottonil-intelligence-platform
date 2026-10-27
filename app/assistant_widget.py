@@ -21,6 +21,19 @@ truncated-response info, copy-to-markdown, and grounded-view deep links stay.
 Deliberately absent from the normal UI (§7.7): the SQL expander, raw SQL text,
 attempts narration, and the six shortcut chips — engine internals are
 untouched, presentation only.
+
+Submission idempotency (2026-10-27 fix): `clear_on_submit` is a FRONTEND
+behaviour — Streamlit does not clear the server-side value of a form's text
+field, so `st.text_input(...)` returns the last submitted text on EVERY
+rerun. Gating the request queue on that value (the first implementation) made
+each rerun re-queue the same question and call `engine.ask()` again —
+dozens of duplicate answers with no further interaction (measured: 153 calls
+from one submission before the fix). The submission is therefore captured
+ONLY in the Send button's `on_click` callback (`_queue_submit`), which runs
+before the script body; the script body only renders and consumes. Every
+request carries an increasing `request_id`, is marked processing before the
+engine call, and is finalized in `finally`: one submission -> at most one
+logical request, and provider failures produce a single error bubble.
 """
 
 from __future__ import annotations
@@ -41,6 +54,11 @@ _OPEN_KEY = "assistant_open"          # panel open state
 _MSGS_KEY = "assistant_msgs"          # preserved session key (§7.5)
 _PENDING_KEY = "assistant_pending"    # preserved session key (§7.5)
 _READY_KEY = "assistant_llm_ready"    # preserved session key (§7.5)
+
+_INPUT_KEY = "assistant_input"        # composer text field (inside the form)
+_SEQ_KEY = "assistant_seq"            # monotonically increasing request ids
+_LAST_REQUEST_KEY = "assistant_last_request"   # id of the request now queued
+_PROCESSING_KEY = "assistant_processing"       # True while engine.ask() runs
 
 _MEMORY_WINDOW = 8                    # last 8 entries -> ~4 exchanges of context
 
@@ -169,6 +187,9 @@ def _ensure_state() -> None:
         (_OPEN_KEY, False),
         (_MSGS_KEY, []),
         (_PENDING_KEY, None),
+        (_SEQ_KEY, 0),
+        (_LAST_REQUEST_KEY, 0),
+        (_PROCESSING_KEY, False),
     ):
         if key not in st.session_state:
             st.session_state[key] = default
@@ -210,24 +231,73 @@ def _probe_llm() -> bool:
 
 
 def _process_pending() -> None:
-    """Consume exactly one queued question per run (no duplicate submissions)."""
-    question = st.session_state.get(_PENDING_KEY)
-    if not question:
+    """Consume exactly one queued question per run; finalize state in finally.
+
+    `_PENDING_KEY` is written ONLY by `_queue_submit()` (one write per real
+    submission event), so reruns and history renders can never start a new
+    request here. Failure of the engine call becomes ONE error bubble — a
+    provider outage or 429 storm can never multiply into duplicate messages.
+    """
+    state = st.session_state
+    question = state.get(_PENDING_KEY)
+    if not question or state.get(_PROCESSING_KEY):
         return
-    st.session_state[_PENDING_KEY] = None
-    st.session_state[_MSGS_KEY].append({"role": "user", "content": question})
-    with st.spinner("Reading the dataset… (guarding SQL, executing read-only, narrating)"):
-        result = engine.ask(question, memory=_memory())
-    st.session_state[_MSGS_KEY].append({
-        "role": "assistant",
-        "narration": result.narration or result.error,
-        "sql": result.sql,               # kept for memory context, never rendered
-        "df": result.df, "sources": result.sources,
-        "truncated": result.truncated, "refusal": result.refusal,
-        "attempts": result.attempts, "provider": result.provider,
-        # engine-level failure (transport etc.): flag it for st.error display
-        "error": bool(result.df is None and result.sql == "" and not result.refusal),
+    state[_PENDING_KEY] = None          # consumed BEFORE any engine work
+    state[_PROCESSING_KEY] = True       # marked BEFORE engine.ask(...) (§fix 4)
+    state[_MSGS_KEY].append({
+        "role": "user", "content": question,
+        "request_id": state.get(_LAST_REQUEST_KEY),
     })
+    try:
+        with st.spinner("Reading the dataset… (guarding SQL, executing read-only, narrating)"):
+            result = engine.ask(question, memory=_memory())
+        state[_MSGS_KEY].append({
+            "role": "assistant",
+            "request_id": state.get(_LAST_REQUEST_KEY),
+            "narration": result.narration or result.error,
+            "sql": result.sql,               # kept for memory context, never rendered
+            "df": result.df, "sources": result.sources,
+            "truncated": result.truncated, "refusal": result.refusal,
+            "attempts": result.attempts, "provider": result.provider,
+            # engine-level failure (transport etc.): flag it for st.error display
+            "error": bool(result.df is None and result.sql == "" and not result.refusal),
+        })
+    except Exception as exc:  # noqa: BLE001 - one honest failure bubble, never a retry loop
+        # Streamlit's own control-flow exceptions (RerunException, StopException)
+        # derive from BaseException, so they pass through untouched.
+        state[_MSGS_KEY].append({
+            "role": "assistant",
+            "request_id": state.get(_LAST_REQUEST_KEY),
+            "narration": f"The assistant request failed: {exc}",
+            "sql": "", "df": None, "sources": [],
+            "truncated": False, "refusal": False, "attempts": [],
+            "provider": "", "error": True,
+        })
+    finally:
+        state[_PROCESSING_KEY] = False   # finalized: the request is done either way
+
+
+def _queue_submit() -> None:
+    """`on_click` of the Send button: the ONLY writer of `assistant_pending`.
+
+    Runs BEFORE the script body on the actual submission event (button click
+    or Enter in the field), so one event queues exactly one request. The
+    composer's text field is cleared here too: `clear_on_submit` is applied
+    by the browser only, and a leftover server-side value is exactly what
+    made reruns re-queue the same question before this fix. Replays of a
+    submit event are idempotent: an empty field or an already-in-flight
+    identical pending is never queued twice.
+    """
+    state = st.session_state
+    text = (state.get(_INPUT_KEY) or "").strip()
+    state[_INPUT_KEY] = ""              # the composer is event-driven now
+    if not text or state.get(_PROCESSING_KEY):
+        return
+    if state.get(_PENDING_KEY) == text:  # identical replay, nothing to queue
+        return
+    state[_SEQ_KEY] = state.get(_SEQ_KEY, 0) + 1
+    state[_LAST_REQUEST_KEY] = state[_SEQ_KEY]
+    state[_PENDING_KEY] = text
 
 
 def _render_history() -> None:
@@ -249,6 +319,13 @@ def _render_history() -> None:
                 st.warning(narration)
             elif message.get("error", False):
                 st.error(narration)
+            elif not narration:
+                # Prose generation failed but the query succeeded: show the
+                # rows once; nothing here ever re-runs SQL to get new prose.
+                st.warning(
+                    "The answer text could not be generated, but the query "
+                    "ran successfully — see the result table below."
+                )
             else:
                 st.markdown(narration)
 
@@ -284,26 +361,26 @@ def _render_composer() -> None:
     """Form input row (§7.6 supported alternative to chat_input in a panel).
 
     Enter in the text field submits the form; clicking Send submits too.
-    `clear_on_submit=True` empties the field on the submission run; the answer
-    is queued exactly once and consumed by `_process_pending()` on the next
-    run, so reruns never re-submit the question.
+    NOTHING here reads the widget's returned value: a submitted value
+    persists server-side across reruns (clear_on_submit is frontend-only),
+    so gating queueing on the return value re-queued the same question on
+    every rerun — the replicate-forever bug. `_queue_submit`, the Send
+    button's on_click callback, is the only queueing path.
     """
     with st.form("assistant_form", clear_on_submit=True, border=False):
         cols = st.columns([1, 0.24])
         with cols[0]:
-            question = st.text_input(
+            st.text_input(
                 "Ask in English or Arabic…",
-                key="assistant_input",
+                key=_INPUT_KEY,
                 placeholder="Ask in English or Arabic…",
                 label_visibility="collapsed",
             )
         with cols[1]:
             st.form_submit_button(
-                "Send", icon=":material/send:", type="primary", width="stretch"
+                "Send", icon=":material/send:", type="primary", width="stretch",
+                on_click=_queue_submit,
             )
-    if question and question.strip():
-        st.session_state[_PENDING_KEY] = question.strip()
-        st.rerun()
 
 
 def _render_panel() -> None:
