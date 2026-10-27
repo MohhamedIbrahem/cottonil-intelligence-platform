@@ -1,4 +1,4 @@
-"""Floating Business Assistant widget (§7) — replaces the standalone page.
+"""Floating Business AI Assistant widget (§7) — replaces the standalone page.
 
 `render_assistant_bubble()` is called once from the application shell
 (`app/Home.py`) before the page runs, so the assistant is available on every
@@ -62,9 +62,12 @@ _PROCESSING_KEY = "assistant_processing"       # True while engine.ask() runs
 
 _MEMORY_WINDOW = 8                    # last 8 entries -> ~4 exchanges of context
 
-# Rendered once per run. Every color resolves to an existing app.theme token
-# (shadows are rgba() of the NAVY token 0x17365D = rgb(23,54,93); user bubbles
-# reuse ACCENT_SOFT). Anchors are the container keys declared below.
+# Rendered once per run. Colors resolve to existing app.theme tokens
+# (shadows are rgba() of the NAVY token 0x17365D = rgb(23,54,93)), plus the
+# assistant's own brand gradient — ACCENT blue into violet #7C5CFC and teal
+# #0E9F8A (the modern, colorful identity requested for this widget; the two
+# hexes live only in this style block). Anchors are the container keys
+# declared below.
 _STYLE = f"""
 <style>
 /* ---- thinking indicator keyframes ---- */
@@ -86,8 +89,8 @@ _STYLE = f"""
     width: 8px;
     animation: assistant-pulse 1.4s ease-in-out infinite;
 }}
-.assistant-thinking span:nth-child(2) {{ animation-delay: 0.16s; }}
-.assistant-thinking span:nth-child(3) {{ animation-delay: 0.32s; }}
+.assistant-thinking span:nth-child(2) {{ animation-delay: 0.16s; background: #7C5CFC; }}
+.assistant-thinking span:nth-child(3) {{ animation-delay: 0.32s; background: #0E9F8A; }}
 .assistant-thinking-label {{
     color: {theme.TEXT_MUTED};
     font-size: 0.76rem;
@@ -112,18 +115,20 @@ _STYLE = f"""
    (.st-key-assistant-dock) is the stable anchor. */
 .st-key-assistant-dock button[data-testid="stBaseButton-secondary"],
 .st-key-assistant-dock button {{
-    background: {theme.ACCENT};
-    border-color: {theme.ACCENT};
+    background: linear-gradient(135deg, {theme.ACCENT} 0%, #7C5CFC 55%, #0E9F8A 130%);
+    border: none;
     border-radius: 50%;
+    box-shadow: 0 10px 24px rgba(124,92,252,0.45);
     color: {theme.PIE_TEXT};
     height: 60px;
     padding: 0;
-    transition: box-shadow 120ms ease, filter 120ms ease;
+    transition: box-shadow 120ms ease, filter 120ms ease, transform 120ms ease;
     width: 60px;
 }}
 .st-key-assistant-dock button:hover {{
-    box-shadow: 0 6px 18px rgba(23,54,93,0.22);
-    filter: brightness(0.92);
+    box-shadow: 0 14px 30px rgba(124,92,252,0.55);
+    filter: brightness(1.06);
+    transform: translateY(-1px);
 }}
 .st-key-assistant-dock button p {{
     display: none; /* icon-only circle; the real label stays for screen readers */
@@ -136,9 +141,9 @@ _STYLE = f"""
 .st-key-assistant-panel {{
     background: {theme.CARD};
     border: 1px solid {theme.BORDER};
-    border-radius: 20px;
+    border-radius: 22px;
     bottom: 96px;
-    box-shadow: 0 18px 48px rgba(23,54,93,0.16);
+    box-shadow: 0 22px 55px rgba(23,54,93,0.28);
     max-height: min(600px, calc(100dvh - 130px));
     overflow-y: auto;
     padding: 0.85rem 0.95rem 0.8rem;
@@ -147,17 +152,57 @@ _STYLE = f"""
     width: min(400px, calc(100vw - 32px));
     z-index: 1001;
 }}
+.assistant-hero {{
+    align-items: center;
+    background: linear-gradient(120deg, {theme.ACCENT} 0%, #5B8DEF 30%, #7C5CFC 68%, #0E9F8A 125%);
+    border-radius: 14px;
+    display: flex;
+    gap: 0.6rem;
+    padding: 0.65rem 0.8rem;
+}}
+.assistant-hero-badge {{
+    align-items: center;
+    background: rgba(255,255,255,0.22);
+    border: 1.5px solid rgba(255,255,255,0.55);
+    border-radius: 50%;
+    display: inline-flex;
+    flex: none;
+    height: 40px;
+    justify-content: center;
+    width: 40px;
+}}
 .st-key-assistant-panel .assistant-panel-title {{
-    color: {theme.NAVY};
-    font-size: 0.92rem;
-    font-weight: 700;
+    color: #FFFFFF;
+    font-size: 1.0rem;
+    font-weight: 800;
     line-height: 1.25;
 }}
 .st-key-assistant-panel .assistant-panel-sub {{
-    color: {theme.TEXT_MUTED};
+    color: rgba(255,255,255,0.88);
     font-size: 0.68rem;
     line-height: 1.4;
-    margin-top: 0.1rem;
+    margin-top: 0.15rem;
+}}
+.assistant-status-dot {{
+    background: #4ADE80;
+    border-radius: 50%;
+    display: inline-block;
+    height: 7px;
+    margin-right: 5px;
+    width: 7px;
+}}
+.assistant-status-dot.assistant-status-off {{
+    background: #F87171;
+}}
+/* Header icon buttons (Clear / Close): soft violet circles beside the hero */
+.st-key-assistant_clear button,
+.st-key-assistant_close button {{
+    background: #F3EFFE;
+    border: 1px solid #E3DBFD;
+    border-radius: 50%;
+    color: #7C5CFC;
+    height: 30px;
+    width: 30px;
 }}
 /* Header buttons — fallback without data-testid for resilience */
 .st-key-assistant-panel button {{
@@ -174,14 +219,21 @@ _STYLE = f"""
 }}
 .st-key-assistant-panel [data-testid="stChatMessage"] {{
     border: 1px solid {theme.BORDER};
-    border-radius: 12px;
-    box-shadow: none;
+    border-radius: 14px;
+    box-shadow: 0 2px 8px rgba(23,54,93,0.05);
     padding: 0.55rem 0.7rem;
 }}
 .st-key-assistant-panel [data-testid="stChatMessage"]:has(
     [data-testid="stChatMessageAvatarUser"]
 ) {{
-    background: {theme.ACCENT_SOFT};
+    background: linear-gradient(120deg, {theme.ACCENT} 0%, #5B8DEF 100%);
+    border: none;
+    box-shadow: 0 4px 12px rgba(40,120,208,0.30);
+}}
+.st-key-assistant-panel [data-testid="stChatMessage"]:has(
+    [data-testid="stChatMessageAvatarUser"]
+) [data-testid="stMarkdownContainer"] p {{
+    color: #FFFFFF;
 }}
 .st-key-assistant-panel [data-testid="stMarkdownContainer"] p {{
     color: {theme.TEXT};
@@ -194,6 +246,14 @@ _STYLE = f"""
 .st-key-assistant-panel [data-baseweb="input"] > div {{
     background: {theme.CARD};
     border-color: {theme.BORDER};
+    border-radius: 24px;
+}}
+.st-key-assistant-panel [data-testid="stFormSubmitButton"] button {{
+    background: linear-gradient(135deg, {theme.ACCENT} 0%, #7C5CFC 100%);
+    border: none;
+    border-radius: 24px;
+    box-shadow: 0 4px 12px rgba(124,92,252,0.40);
+    color: #FFFFFF;
 }}
 /* Truncation notice */
 .assistant-truncated {{
@@ -353,7 +413,7 @@ def _render_history() -> None:
                 st.markdown(message["content"])
             continue
 
-        with st.chat_message("assistant"):
+        with st.chat_message("assistant", avatar=":material/auto_awesome:"):
             narration = message.get("narration") or ""
             if message.get("refusal", False):
                 st.warning(narration)
@@ -436,11 +496,25 @@ def _render_panel() -> None:
     ready = _probe_llm()
     columns = st.columns([1, 0.14, 0.14])
     with columns[0]:
+        status = (
+            "<span class='assistant-status-dot'></span>"
+            "Online · ask about sales, stock &amp; customers"
+            if ready
+            else "<span class='assistant-status-dot assistant-status-off'></span>"
+            "Assistant is offline right now"
+        )
         st.markdown(
-            "<div class='assistant-panel-title'>Business Assistant</div>"
-            "<div class='assistant-panel-sub'>"
-            + (" · ".join(llm.describe_providers()) if ready else "provider not reachable")
-            + "</div>",
+            "<div class='assistant-hero'>"
+            "<span class='assistant-hero-badge'>"
+            "<svg width='20' height='20' viewBox='0 0 24 24' fill='#fff'>"
+            "<path d='M12 2l1.9 5.6L19.5 9l-5.6 1.9L12 16.5l-1.9-5.6L4.5 9l5.6-1.4L12 2z'/>"
+            "<path d='M18.5 14.5l.9 2.6 2.6.9-2.6.9-.9 2.6-.9-2.6-2.6-.9 2.6-.9.9-2.6z' opacity='.85'/>"
+            "</svg></span>"
+            "<div>"
+            "<div class='assistant-panel-title'>Business AI Assistant</div>"
+            "<div class='assistant-panel-sub'>" + status + "</div>"
+            "</div>"
+            "</div>",
             unsafe_allow_html=True,
         )
     with columns[1]:
@@ -479,11 +553,11 @@ def _render_panel() -> None:
 def _render_fab() -> None:
     """Circular fixed button; opens the panel (§7.2)."""
     st.button(
-        "Business Assistant",
-        icon=":material/forum:",
+        "Business AI Assistant",
+        icon=":material/auto_awesome:",
         key="assistant_fab",
         on_click=_open,
-        help="Open the business assistant chat",
+        help="Open the Business AI Assistant",
         width=60,
     )
 
