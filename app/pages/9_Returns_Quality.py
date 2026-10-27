@@ -18,7 +18,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import data, theme
+from app import data, global_filters, theme
 from app.filters import (
     DATA_END,
     delta_label,
@@ -38,12 +38,19 @@ channels = data.q(
 channel = st.sidebar.selectbox("Sales channel", ["All channels", *channels])
 channel_sql = "" if channel == "All channels" else " AND sales_channel = ?"
 
+# Global cross-filters (App Shell v3): governorate + branch, appended
+# after the page's own channel selector in every query below (both views
+# carry the sales-line branch dimensions). Channel itself is NOT a
+# global filter here — the page already owns a channel selector.
+_GF_SUPPORTED = {"governorate", "branch"}
+_gf_where, _gf_params = global_filters.sales_where(_GF_SUPPORTED)
+
 
 def _params(window: tuple) -> tuple:
     params: tuple = tuple(window)
     if channel != "All channels":
         params += (channel,)
-    return params
+    return params + _gf_params
 
 
 def _prior(prior: dict | None, key: str):
@@ -70,7 +77,7 @@ def _returns_kpis(window: tuple) -> dict:
         FROM views.returns_enriched
         WHERE return_date BETWEEN ? AND ?
         """
-        + channel_sql,
+        + channel_sql + _gf_where,
         params,
     ).iloc[0]
     o = data.q(
@@ -80,7 +87,7 @@ def _returns_kpis(window: tuple) -> dict:
         FROM views.sales_enriched
         WHERE order_date BETWEEN ? AND ?
         """
-        + channel_sql,
+        + channel_sql + _gf_where,
         params,
     ).iloc[0]
     returns = int(r.returns or 0)
@@ -114,6 +121,8 @@ theme.page_header(
     badges=('Refunds capped at line value',),
 )
 
+global_filters.render_filter_bar(_GF_SUPPORTED)
+
 cards = st.columns(4)
 _card(
     cards[0], "Returns", theme.fmt_int(cur["returns"]),
@@ -136,6 +145,28 @@ _card(
     f"{cur['defect_share']:.1%} of returns · no inspection funnel", "violet",
 )
 
+# Insights-first strip (App Shell v3): from the KPI dicts above.
+theme.insight_strip([
+    {
+        "icon": "\u21A9\uFE0F", "label": "Return rate",
+        "value": theme.fmt_pct(cur["return_rate"]),
+        "sub": "returned orders / orders in the window (period ratio)",
+        "tone": "good" if pri is None or cur["return_rate"] <= pri["return_rate"] else "bad",
+    },
+    {
+        "icon": "\U0001F6E0\uFE0F", "label": "Defect claims",
+        "value": f"{cur['defect_share']:.1%} of returns",
+        "sub": "self-reported reason label · no inspection funnel in the data",
+        "tone": "warn" if cur["defect_share"] >= 0.1 else "neutral",
+    },
+    {
+        "icon": "\U0001F4B8", "label": "Refund burden",
+        "value": f"{cur['refund_rate']:.2%} of net sales",
+        "sub": "refunds capped at line value (audit A3)",
+        "tone": "good" if pri is None or cur["refund_rate"] <= pri["refund_rate"] else "warn",
+    },
+])
+
 st.divider()
 
 # ---------------------------------------------------------------- trends ----
@@ -149,7 +180,7 @@ trend = data.q(
         FROM views.returns_enriched
         WHERE return_date BETWEEN ? AND ?
         """
-    + channel_sql
+    + channel_sql + _gf_where
     + """
         GROUP BY 1
     ),
@@ -160,7 +191,7 @@ trend = data.q(
         FROM views.sales_enriched
         WHERE order_date BETWEEN ? AND ?
         """
-    + channel_sql
+    + channel_sql + _gf_where
     + """
         GROUP BY 1
     )
@@ -206,7 +237,7 @@ reasons = data.q(
     FROM views.returns_enriched
     WHERE return_date BETWEEN ? AND ?
     """
-    + channel_sql
+    + channel_sql + _gf_where
     + " GROUP BY 1 ORDER BY refund DESC",
     _params((start, end)),
 )
@@ -246,7 +277,7 @@ category = data.q(
         FROM views.returns_enriched
         WHERE return_date BETWEEN ? AND ?
         """
-    + channel_sql
+    + channel_sql + _gf_where
     + """
         GROUP BY 1
     ),
@@ -256,7 +287,7 @@ category = data.q(
         FROM views.sales_enriched
         WHERE order_date BETWEEN ? AND ?
         """
-    + channel_sql
+    + channel_sql + _gf_where
     + """
         GROUP BY 1
     )
@@ -294,7 +325,7 @@ governorates = data.q(
     FROM views.returns_enriched
     WHERE return_date BETWEEN ? AND ?
     """
-    + channel_sql
+    + channel_sql + _gf_where
     + " GROUP BY 1 ORDER BY refund DESC LIMIT 10",
     _params((start, end)),
 )

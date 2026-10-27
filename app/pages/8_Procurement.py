@@ -119,6 +119,28 @@ _card(
     "within payment terms; no contractual promise date", "green",
 )
 
+# Insights-first strip (App Shell v3): from the KPI dicts above.
+theme.insight_strip([
+    {
+        "icon": "\u2705", "label": "On-time rate",
+        "value": theme.fmt_pct(cur["on_time_rate"]),
+        "sub": "deliveries within payment terms",
+        "tone": "good" if pri is None or cur["on_time_rate"] >= pri["on_time_rate"] else "warn",
+    },
+    {
+        "icon": "\u23F3", "label": "Avg lead time",
+        "value": f"{cur['lead_days']:.1f} days",
+        "sub": "PO date to item delivery date",
+        "tone": "good" if pri is None or cur["lead_days"] <= pri["lead_days"] else "warn",
+    },
+    {
+        "icon": "\U0001F4CB", "label": "Partial receipts",
+        "value": f"{cur['partial_pos']:,} POs",
+        "sub": f"of {cur['pos']:,} purchase orders in the window",
+        "tone": "warn" if cur["partial_pos"] else "good",
+    },
+])
+
 st.divider()
 
 # ---------------------------------------------------------------- trends ----

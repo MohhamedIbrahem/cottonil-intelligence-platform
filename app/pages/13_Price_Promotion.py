@@ -111,6 +111,28 @@ with cards[3]:
         tone="violet",
     )
 
+# Insights-first strip (App Shell v3): from the window aggregates above.
+theme.insight_strip([
+    {
+        "icon": "\U0001F3F7\uFE0F", "label": "Discount depth",
+        "value": f"{discount_rate:.1%} weighted rate",
+        "sub": f"{discounted_net_share:.0%} of net sales carried a discount",
+        "tone": "warn" if discount_rate >= 0.15 else "neutral",
+    },
+    {
+        "icon": "\U0001F4B9", "label": "Gross margin",
+        "value": f"{margin:.1%}",
+        "sub": "after the discounts above · recorded unit cost",
+        "tone": "good" if margin >= 0.3 else "warn",
+    },
+    {
+        "icon": "\U0001F4C9", "label": "Price signal",
+        "value": "usable" if beta < 0 and within_r2 >= 0.01 else "no usable signal",
+        "sub": f"β {beta:+.2f} · within-R² {within_r2:.4f} · diagnostic only",
+        "tone": "good" if beta < 0 and within_r2 >= 0.01 else "bad",
+    },
+])
+
 if beta >= 0 or within_r2 < 0.01:
     st.warning(
         "No usable price-elasticity signal. The within-SKU/month log-price "

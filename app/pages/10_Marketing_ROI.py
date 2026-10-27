@@ -127,6 +127,28 @@ _card(
     f"{cur['clicks']:,} clicks / {cur['impressions']:,} impressions", "teal",
 )
 
+# Insights-first strip (App Shell v3): from the KPI dicts above.
+theme.insight_strip([
+    {
+        "icon": "\U0001F4B0", "label": "ROAS",
+        "value": f"{cur['roas']:.2f}x",
+        "sub": "attributed net / spend · directional, not causal (A2)",
+        "tone": "good" if pri is None or cur["roas"] >= pri["roas"] else "warn",
+    },
+    {
+        "icon": "\U0001F3AF", "label": "Budget utilization",
+        "value": f"{cur['budget_utilization']:.1%}",
+        "sub": f"{cur['campaigns']:,} campaigns launched in the window",
+        "tone": "neutral",
+    },
+    {
+        "icon": "\U0001F5B1\uFE0F", "label": "CTR",
+        "value": theme.fmt_pct(cur["ctr"]),
+        "sub": f"{cur['clicks']:,} clicks / {cur['impressions']:,} impressions",
+        "tone": "good" if pri is None or cur["ctr"] >= pri["ctr"] else "warn",
+    },
+])
+
 st.divider()
 
 # ---------------------------------------------------------------- trends ----

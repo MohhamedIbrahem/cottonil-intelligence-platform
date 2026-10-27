@@ -89,6 +89,29 @@ with cards[3]:
         tone="rose",
     )
 
+# Insights-first strip (App Shell v3): from the gap table above (sorted by
+# resident buyers per branch, descending).
+theme.insight_strip([
+    {
+        "icon": "\U0001F4CD", "label": "Thinnest coverage",
+        "value": f"{gap.iloc[-1].governorate_ar} · {theme.fmt_int(float(gap.iloc[-1].resident_buyers_per_branch))} buyers/branch",
+        "sub": "fewest resident buyers per branch — the weakest coverage intensity",
+        "tone": "warn",
+    },
+    {
+        "icon": "\U0001F3EA", "label": "Densest coverage",
+        "value": f"{gap.iloc[0].governorate_ar} · {theme.fmt_int(float(gap.iloc[0].resident_buyers_per_branch))} buyers/branch",
+        "sub": "most resident buyers per branch in the network",
+        "tone": "neutral",
+    },
+    {
+        "icon": "\U0001F517", "label": "Coverage vs POS sales",
+        "value": f"r = {corr:.2f}",
+        "sub": "correlation between buyers/branch and POS net/branch — a proxy, not a model (A17)",
+        "tone": "neutral",
+    },
+])
+
 st.divider()
 
 left, right = st.columns((3, 2))

@@ -16,11 +16,18 @@ sys.path.insert(0, str(_FILE.parents[2]))
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import data, theme
+from app import data, global_filters, theme
 from app.filters import DATA_END, selected_period
 
 start, end, label, _ = selected_period()
 ym_start, ym_end = start.strftime("%Y-%m"), end.strftime("%Y-%m")
+
+# Global cross-filters (App Shell v3): governorate + branch scope the
+# sales/returns queries below. Channel is NOT supported — comparing the
+# channels IS this page's job. The channel_monthly trend is a monthly
+# aggregate without line dimensions, so it stays unfiltered.
+_GF_SUPPORTED = {"governorate", "branch"}
+_gf_where, _gf_params = global_filters.sales_where(_GF_SUPPORTED)
 
 CHANNELS = ["Retail POS", "Wholesale / reseller", "E-commerce"]
 # Channel identity colours — aligned with the coordinated chart sequence order
@@ -54,9 +61,10 @@ channel_kpis = data.q(
            SUM(gross_profit)                                 AS gross_profit
     FROM views.sales_enriched
     WHERE order_date BETWEEN ? AND ?
+    """ + _gf_where + """
     GROUP BY 1
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 channel_kpis = channel_kpis.set_index("sales_channel").reindex(
     [channel for channel in CHANNELS if channel in set(channel_kpis.sales_channel)]
@@ -79,6 +87,7 @@ cross = data.q(
         FROM views.sales_enriched
         WHERE customer_id IS NOT NULL
           AND order_date BETWEEN ? AND ?
+        """ + _gf_where + """
         GROUP BY 1
     )
     SELECT channels, COUNT(*) AS customers, SUM(net_sales) AS net_sales
@@ -86,7 +95,7 @@ cross = data.q(
     GROUP BY 1
     ORDER BY 1
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 cross_customers = int(cross.customers.sum())
 multi = cross[cross.channels >= 2]
@@ -99,12 +108,14 @@ returns = data.q(
         SELECT sales_channel, COUNT(DISTINCT sales_order_id) AS orders
         FROM views.sales_enriched
         WHERE order_date BETWEEN ? AND ?
+        """ + _gf_where + """
         GROUP BY 1
     ),
     returned AS (
         SELECT sales_channel, COUNT(DISTINCT sales_order_id) AS returned_orders
         FROM views.returns_enriched
         WHERE return_date BETWEEN ? AND ?
+        """ + _gf_where + """
         GROUP BY 1
     )
     SELECT o.sales_channel,
@@ -113,7 +124,7 @@ returns = data.q(
     FROM orders o
     LEFT JOIN returned r USING (sales_channel)
     """,
-    (start, end, start, end),
+    (start, end) + _gf_params + (start, end) + _gf_params,
 )
 channel_kpis = channel_kpis.merge(returns, on="sales_channel", how="left")
 channel_kpis["returned_orders"] = channel_kpis["returned_orders"].fillna(0)
@@ -129,6 +140,8 @@ theme.page_header(
     eyebrow="Growth",
     badges=('Observed customers only',),
 )
+
+global_filters.render_filter_bar(_GF_SUPPORTED)
 
 cards = st.columns(4)
 with cards[0]:
@@ -162,6 +175,28 @@ with cards[3]:
         sub=f"{theme.fmt_int(overall_returns)} returned orders / orders in window",
         tone="red",
     )
+
+# Insights-first strip (App Shell v3): from the aggregates above.
+theme.insight_strip([
+    {
+        "icon": "\U0001F6D2", "label": "E-commerce share",
+        "value": f"{ecom_share:.1%} of net sales",
+        "sub": "online is the smallest of the three channels",
+        "tone": "neutral",
+    },
+    {
+        "icon": "\U0001F501", "label": "Multi-channel customers",
+        "value": f"{multi_revenue_share:.1%} of net sales",
+        "sub": f"from {multi_customers:,} buyers who used 2+ channels",
+        "tone": "good" if multi_customers else "neutral",
+    },
+    {
+        "icon": "\u21A9\uFE0F", "label": "Overall return rate",
+        "value": f"{overall_return_rate:.1%}",
+        "sub": "returned orders / orders in the window (period ratio)",
+        "tone": "warn" if overall_return_rate >= 0.05 else "good",
+    },
+])
 
 st.divider()
 

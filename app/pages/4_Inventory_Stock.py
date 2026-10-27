@@ -23,7 +23,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import data, theme
+from app import data, global_filters, theme
 from app.filters import DATA_END, selected_period
 
 # One shared window for both tabs, read from the shell (the selector renders
@@ -31,6 +31,15 @@ from app.filters import DATA_END, selected_period
 start, end, label, _ = selected_period()
 # Aliases keep the moved Replenishment body verbatim from its standalone days.
 _start, _end, _label, _mode = start, end, label, _
+
+# Global cross-filters (App Shell v3): the governorate selection applies
+# to the stock views through their own column name
+# (location_governorate_ar). Channel/branch selections do not map onto
+# stock locations, so they are not supported on this page.
+_GF_SUPPORTED = {"governorate"}
+_gf_loc_where, _gf_loc_params = global_filters.sales_where(
+    _GF_SUPPORTED, columns={"governorate": "location_governorate_ar"}
+)
 
 
 
@@ -66,8 +75,11 @@ cells = data.q(
            velocity_90d, velocity_source, cover_days, target_cover_days,
            reorder_units, reorder_value_EGP, signal, action
     FROM views.replenishment_signals
+    WHERE 1 = 1
+    """ + _gf_loc_where + """
     ORDER BY signal, cover_days
-    """
+    """,
+    _gf_loc_params,
 )
 
 def _render_stock() -> None:
@@ -87,12 +99,19 @@ def _render_stock() -> None:
         SELECT SUM(closing_units) AS units, SUM(closing_stock_value) AS value_egp,
                COUNT(*) AS cells, COUNT(DISTINCT stock_location_id) AS locations
         FROM views.stock_latest
-    """).iloc[0]
+        WHERE 1 = 1
+        """ + _gf_loc_where,
+        _gf_loc_params,
+    ).iloc[0]
     at_risk = data.scalar(
         "SELECT COUNT(*) FROM views.stock_latest WHERE stockout_risk_score >= 0.70"
+        + _gf_loc_where,
+        _gf_loc_params,
     ) or 0
     low_cells = data.scalar(
         "SELECT COUNT(*) FROM views.stock_latest WHERE stock_status = 'Low stock'"
+        + _gf_loc_where,
+        _gf_loc_params,
     ) or 0
 
     k_cols = st.columns(4)
@@ -110,6 +129,38 @@ def _render_stock() -> None:
         with col:
             theme.kpi_card(title, value, sub=sub, tone=tone)
 
+    # Insights-first strip (App Shell v3): from the snapshot KPIs above
+    # plus the single highest-risk cell — one extra scalar-grade query.
+    _top_risk = data.q(
+        "SELECT location_label, product_category, stockout_risk_score "
+        "FROM views.stock_latest WHERE 1 = 1"
+        + _gf_loc_where
+        + " ORDER BY stockout_risk_score DESC LIMIT 1",
+        _gf_loc_params,
+    )
+    theme.insight_strip([
+        {
+            "icon": "\u26A0\uFE0F", "label": "Stockout risk",
+            "value": f"{int(at_risk)} at-risk cells",
+            "sub": f"risk \u22650.70 · {theme.fmt_pct(int(at_risk) / max(int(snap.cells), 1))} of the latest snapshot",
+            "tone": "bad" if int(at_risk) else "good",
+        },
+        {
+            "icon": "\U0001F4E6", "label": "Low stock",
+            "value": f"{int(low_cells)} low-stock cells",
+            "sub": "view bucket policy (risk \u22650.60)",
+            "tone": "warn" if int(low_cells) else "good",
+        },
+        {
+            "icon": "\U0001F4CD", "label": "Highest-risk cell",
+            "value": (f"{_top_risk.iloc[0].location_label} · {_top_risk.iloc[0].product_category}"
+                      if len(_top_risk) else "—"),
+            "sub": (f"stockout risk {float(_top_risk.iloc[0].stockout_risk_score):.2f} in {latest_month}"
+                    if len(_top_risk) else "no snapshot rows"),
+            "tone": "bad" if len(_top_risk) and float(_top_risk.iloc[0].stockout_risk_score) >= 0.70 else "neutral",
+        },
+    ])
+
     st.divider()
 
     # ------------------------------------------------------------ trend (T071) --
@@ -121,10 +172,11 @@ def _render_stock() -> None:
                SUM(closing_units) AS units, SUM(closing_stock_value) AS value_egp
         FROM views.stock_monthly
         WHERE year_month BETWEEN ? AND ?
+        """ + _gf_loc_where + """
         GROUP BY year_month, UPPER(stock_location_type)
         ORDER BY year_month
         """,
-        (ym_start, ym_end),
+        (ym_start, ym_end) + _gf_loc_params,
     )
     val_fig = go.Figure()
     for loc_type, color in zip(("BRANCH", "WAREHOUSE"), (theme.ACCENT, theme.ACCENT_2), strict=False):
@@ -165,8 +217,12 @@ def _render_stock() -> None:
         """
         SELECT product_category AS category, SUM(closing_stock_value) AS value_egp,
                SUM(closing_units) AS units
-        FROM views.stock_latest GROUP BY 1 ORDER BY 2 DESC
-        """
+        FROM views.stock_latest
+        WHERE 1 = 1
+        """ + _gf_loc_where + """
+        GROUP BY 1 ORDER BY 2 DESC
+        """,
+        _gf_loc_params,
     )
     if len(cat_mix) > 8:
         head8, tail = cat_mix.iloc[:8].copy(), cat_mix.iloc[8:].copy()
@@ -179,8 +235,12 @@ def _render_stock() -> None:
         """
         SELECT stock_status AS status, COUNT(*) AS cells,
                SUM(closing_stock_value) AS value_egp
-        FROM views.stock_latest GROUP BY 1 ORDER BY 2 DESC
-        """
+        FROM views.stock_latest
+        WHERE 1 = 1
+        """ + _gf_loc_where + """
+        GROUP BY 1 ORDER BY 2 DESC
+        """,
+        _gf_loc_params,
     )
 
     cat_fig = go.Figure(go.Pie(
@@ -216,8 +276,11 @@ def _render_stock() -> None:
                closing_units AS units, closing_stock_value AS value_egp,
                stockout_risk_score AS risk
         FROM views.stock_latest
+        WHERE 1 = 1
+        """ + _gf_loc_where + """
         ORDER BY risk DESC LIMIT 10
-        """
+        """,
+        _gf_loc_params,
     )
 
 
@@ -559,6 +622,8 @@ def _render_replenishment() -> None:
             "- **Risk score** is the source `stockout_risk_score`; it is not used in "
             "the cover rule, to avoid double-counting."
         )
+
+global_filters.render_filter_bar(_GF_SUPPORTED)
 
 stock_tab, repl_tab = st.tabs(["Inventory & Stock", "Replenishment"])
 

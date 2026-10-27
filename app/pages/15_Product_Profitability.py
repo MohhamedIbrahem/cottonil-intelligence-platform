@@ -144,6 +144,28 @@ with cards[3]:
         tone="red",
     )
 
+# Insights-first strip (App Shell v3): from the window aggregates above.
+theme.insight_strip([
+    {
+        "icon": "\U0001F4B9", "label": "Gross margin",
+        "value": f"{margin:.1%}",
+        "sub": f"{theme.fmt_egp(gross_profit)} gross profit on {theme.fmt_egp(net_sales)} net",
+        "tone": "good" if margin >= 0.3 else "warn",
+    },
+    {
+        "icon": "\u26A0\uFE0F", "label": "Low-margin exposure",
+        "value": f"{low_margin_share:.1%} of net sales",
+        "sub": f"from SKU-months below the {LOW_MARGIN:.0%} margin flag",
+        "tone": "bad" if low_margin_share >= 0.25 else "warn",
+    },
+    {
+        "icon": "\U0001F4E6", "label": "Assortment breadth",
+        "value": f"{int(period.sku_months):,} SKU-months",
+        "sub": f"{theme.fmt_int(float(period.units or 0))} units sold in the window",
+        "tone": "neutral",
+    },
+])
+
 st.divider()
 
 left, right = st.columns((3, 2))

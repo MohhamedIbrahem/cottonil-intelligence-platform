@@ -18,7 +18,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import data, theme
+from app import data, global_filters, theme
 from app.filters import (
     DATA_END,
     delta_label,
@@ -28,6 +28,15 @@ from app.filters import (
 )
 
 start, end, label, mode = selected_period()
+
+# Global cross-filters (App Shell v3): governorate + branch scope this
+# page's sales queries. Channel is NOT supported here — the page is the
+# wholesale channel by definition, and the company-total denominators
+# stay unfiltered so the share figures keep their meaning.
+_GF_SUPPORTED = {"governorate", "branch"}
+_gf_where, _gf_params = global_filters.sales_where(_GF_SUPPORTED)
+_gf_branch_where, _gf_branch_params = global_filters.sales_where({"branch"})
+
 prev_window = previous_period(start, end, mode)
 prev_label = window_label(prev_window, empty="no comparison window")
 _delta = partial(delta_label, label=prev_label)
@@ -54,8 +63,8 @@ def _wholesale_kpis(window: tuple) -> dict:
         FROM views.sales_enriched
         WHERE sales_channel = 'Wholesale / reseller'
           AND order_date BETWEEN ? AND ?
-        """,
-        window,
+        """ + _gf_where,
+        tuple(window) + _gf_params,
     ).iloc[0]
     total = data.scalar(
         "SELECT SUM(net_sales) FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?",
@@ -70,8 +79,8 @@ def _wholesale_kpis(window: tuple) -> dict:
         FROM views.sales_enriched
         WHERE customer_segment = 'B2B reseller'
           AND order_date BETWEEN ? AND ?
-        """,
-        window,
+        """ + _gf_where,
+        tuple(window) + _gf_params,
     ).iloc[0]
     new_accounts = data.scalar(
         """
@@ -139,6 +148,30 @@ _card(
     f"{cur['new_accounts']:,} placed their first order in this window", "rose",
 )
 
+global_filters.render_filter_bar(_GF_SUPPORTED)
+
+# Insights-first strip (App Shell v3): from the KPI dicts above.
+theme.insight_strip([
+    {
+        "icon": "\U0001F4E6", "label": "Wholesale share",
+        "value": f"{cur['share']:.1%} of company net",
+        "sub": "wholesale channel net vs the unfiltered company total",
+        "tone": "good" if pri is None or cur["share"] >= pri["share"] else "warn",
+    },
+    {
+        "icon": "\U0001F4C8", "label": "B2B margin",
+        "value": theme.fmt_pct(cur["b2b_margin"]),
+        "sub": "gross margin on B2B reseller sales in the window",
+        "tone": "good" if cur["b2b_margin"] >= 0.2 else "warn",
+    },
+    {
+        "icon": "\U0001F195", "label": "New B2B accounts",
+        "value": f"{cur['new_accounts']:,}",
+        "sub": "placed their first order in this window",
+        "tone": "good" if cur["new_accounts"] else "neutral",
+    },
+])
+
 st.divider()
 
 # ------------------------------------------------------------ channel trend --
@@ -151,6 +184,7 @@ trend = data.q(
         FROM views.sales_enriched
         WHERE sales_channel = 'Wholesale / reseller'
           AND order_date BETWEEN ? AND ?
+        """ + _gf_where + """
         GROUP BY 1
     ),
     t AS (
@@ -165,7 +199,7 @@ trend = data.q(
     FROM w JOIN t USING (ym)
     ORDER BY w.ym
     """,
-    (start, end, start, end),
+    (start, end) + _gf_params + (start, end),
 )
 
 trend_fig = go.Figure()
@@ -202,9 +236,10 @@ governorates = data.q(
     FROM views.sales_enriched
     WHERE sales_channel = 'Wholesale / reseller'
       AND order_date BETWEEN ? AND ?
+    """ + _gf_branch_where + """
     GROUP BY 1 ORDER BY net DESC
     """,
-    (start, end),
+    (start, end) + _gf_branch_params,
 )
 governorates["share"] = governorates.net / governorates.net.sum()
 gov_top = governorates.head(12).sort_values("net")
@@ -246,9 +281,10 @@ categories = data.q(
     FROM views.sales_enriched
     WHERE sales_channel = 'Wholesale / reseller'
       AND order_date BETWEEN ? AND ?
+    """ + _gf_where + """
     GROUP BY 1 ORDER BY net DESC
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 if len(categories) > 8:
     other = pd.DataFrame({
@@ -279,6 +315,7 @@ quartiles = data.q(
         FROM views.sales_enriched
         WHERE customer_segment = 'B2B reseller'
           AND order_date BETWEEN ? AND ?
+        """ + _gf_where + """
         GROUP BY 1
     )
     SELECT a.net_quartile,
@@ -288,7 +325,7 @@ quartiles = data.q(
     FROM p JOIN views.wholesale_accounts a USING (customer_id)
     GROUP BY 1 ORDER BY 1
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 
 quartile_fig = go.Figure(go.Bar(
@@ -333,6 +370,7 @@ accounts = data.q(
         FROM views.sales_enriched
         WHERE customer_segment = 'B2B reseller'
           AND order_date BETWEEN ? AND ?
+        """ + _gf_where + """
         GROUP BY 1
     )
     SELECT p.customer_id,
@@ -349,7 +387,7 @@ accounts = data.q(
     LEFT JOIN views.wholesale_accounts a USING (customer_id)
     ORDER BY p.net DESC
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 top10_share = accounts.head(10).net.sum() / accounts.net.sum() if accounts.net.sum() else 0.0
 accounts["margin"] = accounts.margin * 100

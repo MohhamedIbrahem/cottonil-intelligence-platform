@@ -28,7 +28,7 @@ import streamlit as st
 from app import theme
 from app.assistant_widget import render_assistant_bubble
 from app.filters import render_period_selector
-from app.navigation import build_navigation
+from app.navigation import build_navigation, group_for_key, key_for_title, page_names
 from pipeline import config
 
 st.set_page_config(
@@ -46,17 +46,45 @@ if not config.DB_PATH.exists():
     st.stop()
 
 # The shared reporting-period selector — rendered exactly once, in the shell.
-render_period_selector()
+_period = render_period_selector()
 
 # Real status line: latest data date + database connectivity.
 theme.sidebar_footer(data_through=config.DATA_END_DATE, connected=config.DB_PATH.exists())
 
-# Floating Business Assistant — one dock shared by every dashboard.
-render_assistant_bubble()
+# Grouped enterprise navigation (App Shell v3): only the group containing
+# the active page stays expanded, so the 16-page sidebar stays scannable.
+# BUILD_NOTE: Streamlit mounts the grouped nav above other sidebar content;
+# the brand identity therefore rides on the sidebar brand header rendered
+# by theme.apply_theme() plus the top bar below.
+_nav_dict = build_navigation()
+# The st.Page objects inside the navigation dict, in registry order —
+# jump targets must be these exact objects, not re-created copies.
+_nav_pages = {
+    key: page_obj
+    for key, page_obj in zip(
+        page_names(),
+        [page_obj for group_pages in _nav_dict.values() for page_obj in group_pages],
+        strict=True,
+    )
+}
+page = st.navigation(_nav_dict, expanded=False)
+_current_key = key_for_title(page.title or "")
+_current_group = group_for_key(_current_key)
 
-# Grouped enterprise navigation; expanded keeps every group visible.
-# BUILD_NOTE: Streamlit mounts the grouped nav above other sidebar content; a
-# brand block below the nav is not supported natively, so the brand identity
-# rides on the app header + page titles (documented limitation, §4.3).
-page = st.navigation(build_navigation(), expanded=True)
+# Sticky top bar: brand + breadcrumb, quick jump, period/data chips.
+_jump = theme.topbar(
+    group=_current_group,
+    title=page.title or "",
+    period_label=_period[2],
+    data_through=config.DATA_END_DATE,
+    jump_options=[(key, _nav_pages[key].title or key) for key in page_names()],
+    current_key=_current_key,
+)
+if _jump:
+    st.switch_page(_nav_pages[_jump])
+
+# Floating Business Assistant — one dock shared by every dashboard,
+# aware of the page the user is on (contextual suggestions + badge).
+render_assistant_bubble(_current_key)
+
 page.run()

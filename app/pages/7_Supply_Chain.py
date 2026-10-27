@@ -141,6 +141,28 @@ _card(
     "charged to customers; no carrier cost data", "violet",
 )
 
+# Insights-first strip (App Shell v3): from the KPI dicts above.
+theme.insight_strip([
+    {
+        "icon": "\u23F1\uFE0F", "label": "Delayed rate",
+        "value": theme.fmt_pct(cur_d["delayed_rate"]),
+        "sub": f"{cur_d['delayed']:,} of {cur_d['shipments']:,} shipments delayed",
+        "tone": "good" if pri_d is None or cur_d["delayed_rate"] <= pri_d["delayed_rate"] else "bad",
+    },
+    {
+        "icon": "\U0001F69A", "label": "Avg delivery time",
+        "value": f"{cur_d['avg_days']:.1f} days",
+        "sub": "ship date to delivery date",
+        "tone": "good" if pri_d is None or cur_d["avg_days"] <= pri_d["avg_days"] else "warn",
+    },
+    {
+        "icon": "\U0001F4E6", "label": "Open transfers",
+        "value": f"{cur_t['open']:,}",
+        "sub": f"{cur_t['in_transit']:,} in transit · {cur_t['partial']:,} partially received",
+        "tone": "warn" if cur_t["open"] else "good",
+    },
+])
+
 st.divider()
 
 # ------------------------------------------------------- outbound delivery --

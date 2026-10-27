@@ -111,6 +111,28 @@ with cards[3]:
         tone="violet",
     )
 
+# Insights-first strip (App Shell v3): from the forecast metrics above.
+theme.insight_strip([
+    {
+        "icon": "\U0001F52E", "label": "Next 6 months",
+        "value": f"{forecast_growth:+.1%} vs a year earlier",
+        "sub": "sum of the monthly forecast vs the same 6 months last year",
+        "tone": "good" if forecast_growth >= 0 else "warn",
+    },
+    {
+        "icon": "\U0001F3AF", "label": "Holdout WAPE",
+        "value": f"{metrics['wape_latest']:.1%}",
+        "sub": f"latest 12-month holdout · mean {metrics['wape_mean']:.1%} across {metrics['backtest_windows']} origins · lower is better",
+        "tone": "good" if metrics["wape_latest"] <= 0.25 else "warn",
+    },
+    {
+        "icon": "\U0001F4C5", "label": "Last complete month",
+        "value": formatter(float(last["actual"])),
+        "sub": f"actual demand in {last['ym']} · partial month excluded",
+        "tone": "neutral",
+    },
+])
+
 st.divider()
 
 # --------------------------------------------------------------- forecast plot --

@@ -172,3 +172,19 @@ VIEW_PAGE_MAP: dict[str, str] = {
     "workforce_monthly": "workforce",
     "expansion_gap": "expansion",
 }
+
+
+def key_for_title(title: str) -> str:
+    """Registry key for a page title (titles are unique in _PAGES)."""
+    for key, spec in _PAGES.items():
+        if spec["title"] == title:
+            return key
+    return "executive_overview"
+
+
+def group_for_key(key: str) -> str:
+    """Navigation group name containing the given page key."""
+    for group, keys in NAV_GROUPS:
+        if key in keys:
+            return group
+    return NAV_GROUPS[0][0]

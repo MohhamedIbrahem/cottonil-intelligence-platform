@@ -160,6 +160,28 @@ with cards[3]:
         tone="green",
     )
 
+# Insights-first strip (App Shell v3): reference-year aggregates above.
+theme.insight_strip([
+    {
+        "icon": "\U0001F4BC", "label": "Labor cost ratio",
+        "value": f"{labor_ratio:.1%}",
+        "sub": f"net payroll / sales in payroll-covered branch-months · {REFERENCE_YEAR}",
+        "tone": "warn" if labor_ratio >= 0.2 else "good",
+    },
+    {
+        "icon": "\U0001F4C8", "label": "Sales per paid employee",
+        "value": f"{theme.fmt_egp(sales_per_employee_month)} / month",
+        "sub": "payroll-covered labour only · not an FTE measure (A16)",
+        "tone": "neutral",
+    },
+    {
+        "icon": "\U0001F465", "label": "Avg paid employees",
+        "value": theme.fmt_int(avg_paid),
+        "sub": f"per month in {REFERENCE_YEAR} · 640 employees ever attached",
+        "tone": "neutral",
+    },
+])
+
 st.divider()
 
 left, right = st.columns((3, 2))

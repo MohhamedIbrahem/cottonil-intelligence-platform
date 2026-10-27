@@ -25,10 +25,17 @@ import numpy as np
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import analytics, data, theme
+from app import analytics, data, global_filters, theme
 from app.filters import DATA_END, selected_period
 
 start, end, label, _ = selected_period()
+
+# Global cross-filters (App Shell v3): applied ONLY to the window-scoped
+# sales query in the Customer Intelligence tab (active / repeat buyers).
+# RFM tiers, CLV and the churn holdout are profile facts computed as of
+# the dataset end — immutable by design (A5) — so they stay unfiltered.
+_GF_SUPPORTED = {"governorate", "channel", "branch"}
+_gf_where, _gf_params = global_filters.sales_where(_GF_SUPPORTED)
 
 
 
@@ -211,14 +218,16 @@ def _render_ci() -> None:
         WITH per_customer AS (
             SELECT customer_id, COUNT(DISTINCT sales_order_id) AS orders
             FROM views.sales_enriched
-            WHERE order_date BETWEEN ? AND ? AND customer_id IS NOT NULL
+            WHERE order_date BETWEEN ? AND ?
+            """ + _gf_where + """
+              AND customer_id IS NOT NULL
             GROUP BY customer_id
         )
         SELECT COUNT(*) AS active,
                COUNT(*) FILTER (WHERE orders >= 2) AS repeat_customers,
                SUM(orders) AS orders_total
         FROM per_customer
-    """, (start, end)).iloc[0]
+    """, (start, end) + _gf_params).iloc[0]
     new_signups = data.scalar(
         "SELECT COUNT(*) FROM views.customer_profile WHERE joined_date BETWEEN ? AND ?",
         (start, end),
@@ -249,6 +258,28 @@ def _render_ci() -> None:
     ):
         with col:
             theme.kpi_card(title, value, sub=sub, tone=tone)
+
+    # Insights-first strip (App Shell v3): from the window stats above.
+    theme.insight_strip([
+        {
+            "icon": "\U0001F501", "label": "Repeat rate",
+            "value": theme.fmt_pct(repeat_rate),
+            "sub": f"{int(window_stats.repeat_customers):,} of {int(window_stats.active):,} active customers ordered 2+ times",
+            "tone": "good" if repeat_rate >= 0.3 else "warn",
+        },
+        {
+            "icon": "\U0001F464", "label": "Active customers",
+            "value": theme.fmt_int(float(window_stats.active)),
+            "sub": "identified buyers in the selected window (guests excluded, A4)",
+            "tone": "neutral",
+        },
+        {
+            "icon": "\U0001F195", "label": "New sign-ups",
+            "value": theme.fmt_int(float(new_signups)),
+            "sub": "catalog sign-ups joined within the window",
+            "tone": "good" if new_signups else "neutral",
+        },
+    ])
 
     st.divider()
 
@@ -454,6 +485,28 @@ def _render_clv() -> None:
             sub=f"{churned:,} of {eligible:,} eligible buyers · 365+ days since last order",
             tone="red",
         )
+
+    # Insights-first strip (App Shell v3): profile facts, as-of dataset end.
+    theme.insight_strip([
+        {
+            "icon": "\U0001F4B0", "label": "CLV concentration",
+            "value": f"top 10% hold {top_decile_share:.1%}",
+            "sub": "of historical CLV (lifetime gross profit)",
+            "tone": "warn" if top_decile_share >= 0.5 else "neutral",
+        },
+        {
+            "icon": "\U0001F6AA", "label": "Churn rate",
+            "value": f"{churn_rate:.1%}",
+            "sub": f"{churned:,} of {eligible:,} eligible buyers inactive 365+ days",
+            "tone": "bad" if churn_rate >= 0.3 else "warn",
+        },
+        {
+            "icon": "\U0001F6D2", "label": "Buyer share",
+            "value": f"{buyer_share:.1%}",
+            "sub": f"{buyers:,} of {catalog:,} cataloged customers have purchased",
+            "tone": "neutral",
+        },
+    ])
 
     st.divider()
 
@@ -705,6 +758,8 @@ def _render_clv() -> None:
             "operational follow-up, with the caveat that it is a definition, not a "
             "prediction."
         )
+
+global_filters.render_filter_bar(_GF_SUPPORTED)
 
 ci_tab, clv_tab = st.tabs(["Customer Intelligence", "CLV & Churn"])
 
