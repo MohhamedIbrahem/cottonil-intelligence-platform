@@ -150,6 +150,37 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {{
     background: {CARD_2};
 }}
 
+/* Grouped sidebar navigation: compact uppercase section labels and a
+   clearly visible active page, using existing tokens only. */
+[data-testid="stNavSectionHeader"] {{
+    border-radius: 8px;
+    color: {TEXT_MUTED};
+    font-size: 0.66rem;
+    font-weight: 750;
+    letter-spacing: 0.11em;
+    margin-top: 0.45rem;
+    text-transform: uppercase;
+}}
+[data-testid="stNavSectionHeader"] span {{
+    color: inherit;
+}}
+[data-testid="stSidebarNavLinkContainer"] {{
+    margin: 1px 0;
+}}
+[data-testid="stSidebarNavLink"] {{
+    border-radius: 9px;
+    font-size: 0.86rem;
+    padding: 5px 8px;
+}}
+[data-testid="stSidebarNavLink"][aria-current="page"] {{
+    background: {ACCENT_SOFT};
+    color: {ACCENT};
+    font-weight: 700;
+}}
+[data-testid="stSidebarNavLink"] span {{
+    font-size: inherit;
+}}
+
 .cottonil-brand {{
     align-items: center;
     border-bottom: 1px solid {BORDER};
@@ -459,41 +490,20 @@ a:hover {{
     line-height: 1.4;
 }}
 
-/* ---------------------------------------------------------- dashboard cards -- */
-.cottonil-nav-card {{
-    background: {CARD};
-    border: 1px solid {BORDER};
-    border-radius: 14px;
-    box-shadow: 0 1px 2px rgba(23,54,93,0.03);
-    height: 100%;
-    padding: 0.9rem 1rem 0.95rem;
-    transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
-}}
-.cottonil-nav-card:hover {{
-    border-color: rgba(40,120,208,0.45);
-    box-shadow: 0 6px 18px rgba(23,54,93,0.08);
-    transform: translateY(-1px);
-}}
-.cottonil-nav-kicker {{
+/* ------------------------------------------------------- sidebar footer -- */
+.cottonil-sidebar-footer {{
     color: {TEXT_MUTED};
-    font-size: 0.64rem;
-    font-weight: 750;
-    letter-spacing: 0.10em;
-    margin-bottom: 0.28rem;
-    text-transform: uppercase;
-}}
-.cottonil-nav-title {{
-    color: {NAVY};
-    font-size: 1rem;
-    font-weight: 720;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
-}}
-.cottonil-nav-desc {{
-    color: {TEXT_MUTED};
-    font-size: 0.76rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
     line-height: 1.5;
-    margin-top: 0.38rem;
+    justify-content: flex-start;
+    margin-top: 0.55rem;
+}}
+.cottonil-sidebar-footer b {{
+    color: {TEXT};
+    font-weight: 650;
 }}
 
 /* ------------------------------------------------------------------ charts -- */
@@ -713,16 +723,32 @@ def page_header(
     *,
     eyebrow: str | None = None,
     badges: Sequence[str | tuple[str, str]] = (),
+    caption: str | None = None,
+    period: str | None = None,
 ) -> None:
-    """Render the shared page header used by every dashboard."""
+    """Render the shared page header used by every dashboard.
+
+    `caption` is an alias for `subtitle` (§8 of the UI refactor keeps the
+    existing signature intact). `period` renders one neutral chip that only
+    *displays* the shared reporting window; pages whose metrics are
+    period-independent (profile facts, snapshots) must not pass it.
+    """
+    if subtitle is None:
+        subtitle = caption
     eyebrow_html = f'<div class="cottonil-eyebrow">{_inline(eyebrow)}</div>' if eyebrow else ""
     subtitle_html = f'<p class="cottonil-page-sub">{_inline(subtitle)}</p>' if subtitle else ""
-    chips = []
-    for badge in badges:
-        text, tone = (badge, "") if isinstance(badge, str) else badge
-        tone_class = f" tone-{tone}" if tone else ""
-        chips.append(f'<span class="cottonil-chip{tone_class}">{_inline(text)}</span>')
-    badge_html = f'<div class="cottonil-chip-row">{"".join(chips)}</div>' if chips else ""
+    chips: list[str | tuple[str, str]] = []
+    if period:
+        chips.append((f"Window \u00b7 {period}", "neutral"))
+    chips.extend(badges)
+    badge_html = ""
+    if chips:
+        rendered = []
+        for badge in chips:
+            text, tone = (badge, "") if isinstance(badge, str) else badge
+            tone_class = f" tone-{tone}" if tone else ""
+            rendered.append(f'<span class="cottonil-chip{tone_class}">{_inline(text)}</span>')
+        badge_html = f'<div class="cottonil-chip-row">{"".join(rendered)}</div>'
     st.markdown(
         f'<div class="cottonil-page-head">{eyebrow_html}<h1>{_inline(title)}</h1>'
         f"{subtitle_html}{badge_html}</div>",
@@ -764,20 +790,17 @@ def section_header(title: str, subtitle: str | None = None, *, eyebrow: str | No
     )
 
 
-def dashboard_card(
-    title: str,
-    description: str,
-    *,
-    kicker: str | None = None,
-) -> None:
-    """Render one dashboard entry in the Home navigation grid."""
-    kicker_html = (
-        f'<div class="cottonil-nav-kicker">{_inline(kicker)}</div>' if kicker else ""
-    )
-    st.markdown(
-        f'<div class="cottonil-nav-card">{kicker_html}'
-        f'<div class="cottonil-nav-title">{_inline(title)}</div>'
-        f'<div class="cottonil-nav-desc">{_inline(description)}</div></div>',
+def sidebar_footer(*, data_through: str, connected: bool) -> None:
+    """Sidebar status line: latest data date + database connectivity (real state)."""
+    state = "connected" if connected else "database missing"
+    mark_color = GOOD if connected else BAD
+    st.sidebar.markdown(
+        f'<div class="cottonil-sidebar-footer">'
+        f'<b>DuckDB {state}</b>'
+        f'<span aria-hidden="true"></span>'
+        f'<b>data through {html.escape(data_through)}</b>'
+        f'<style>.cottonil-sidebar-footer span{{background:{mark_color};border-radius:50%;'
+        f'display:inline-block;height:8px;width:8px;}}</style></div>',
         unsafe_allow_html=True,
     )
 

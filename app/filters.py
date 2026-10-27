@@ -3,6 +3,11 @@
 Constitution: default = Last 12 months ending at the dataset's last date
 (Oct 2025-19 -> Oct 2026-18 per audit A5). Calendar-year and All-time modes
 are selectable; the deck's 'Jan 2024 - Dec 2024' is reachable via Calendar year.
+
+The selector is rendered exactly once, by the application shell
+(`app/Home.py`). Pages read the chosen window with `selected_period()` and
+never render their own copy — the selection survives navigation because it
+lives in session state under the key `period`.
 """
 
 from __future__ import annotations
@@ -19,23 +24,61 @@ MODE_YEAR = "Calendar year"
 MODE_ALL = "All time"
 MODES = (MODE_LAST_12M, MODE_YEAR, MODE_ALL)
 
+PERIOD_KEY = "period"       # session-state key the shell persists the window under
+PERIOD_MODE_KEY = "period_mode"    # the radio widget (rendered in the shell only)
+PERIOD_YEAR_KEY = "period_year"    # the calendar-year selectbox (shell only)
+
 DATA_START = date(2018, 10, 19)  # first transaction date in the dataset
 DATA_END = date.fromisoformat(config.DATA_END_DATE)
 AVAILABLE_YEARS = list(range(DATA_END.year, DATA_START.year - 1, -1))
 
 
 def render_period_selector() -> tuple[date, date, str, str]:
-    """Draw the sidebar control; return (start, end, label, mode) - end inclusive."""
-    mode = st.sidebar.radio("Reporting period", MODES, index=0)
+    """Draw the sidebar control; return (start, end, label, mode) - end inclusive.
+
+    Called once by `app/Home.py`. Stores the result in session state so
+    every dashboard reads the same window via `selected_period()`.
+    """
+    mode = st.sidebar.radio(
+        "Reporting period", MODES, index=0, key=PERIOD_MODE_KEY
+    )
 
     if mode == MODE_ALL:
-        return DATA_START, DATA_END, f"All time ({DATA_START.year}\u2013{DATA_END.year})", mode
+        window = (DATA_START, DATA_END, f"All time ({DATA_START.year}\u2013{DATA_END.year})", mode)
+        st.session_state[PERIOD_KEY] = window
+        return window
 
     if mode == MODE_YEAR:
-        year = st.sidebar.selectbox("Calendar year", AVAILABLE_YEARS, index=0)
+        year = st.sidebar.selectbox("Calendar year", AVAILABLE_YEARS, index=0, key=PERIOD_YEAR_KEY)
         start = date(year, 1, 1)
         end = min(date(year, 12, 31), DATA_END)
         label = f"{start.strftime('%b %Y')} \u2013 {end.strftime('%b %Y')}"
+        window = (start, end, label, mode)
+        st.session_state[PERIOD_KEY] = window
+        return window
+
+    start = DATA_END - timedelta(days=364)
+    window = (
+        start,
+        DATA_END,
+        f"Last 12 months ({start.strftime('%b %Y')} \u2013 {DATA_END.strftime('%b %Y')})",
+        mode,
+    )
+    st.session_state[PERIOD_KEY] = window
+    return window
+
+
+def selected_period() -> tuple[date, date, str, str]:
+    """Read the window chosen in the shell without rendering a control.
+
+    Dashboard pages call this instead of `render_period_selector()` so the
+    reporting-period control exists exactly once (in `app/Home.py`). Falls
+    back to the default window when executed outside a shell run (e.g. a
+    standalone smoke test) — identical semantics, no widget rendered.
+    """
+    window = st.session_state.get(PERIOD_KEY)
+    if window is not None:
+        start, end, label, mode = window
         return start, end, label, mode
 
     start = DATA_END - timedelta(days=364)
@@ -43,7 +86,7 @@ def render_period_selector() -> tuple[date, date, str, str]:
         start,
         DATA_END,
         f"Last 12 months ({start.strftime('%b %Y')} \u2013 {DATA_END.strftime('%b %Y')})",
-        mode,
+        MODE_LAST_12M,
     )
 
 
