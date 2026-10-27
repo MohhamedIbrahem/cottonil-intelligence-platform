@@ -77,15 +77,23 @@ def _execute(sql: str) -> pd.DataFrame:
     if worker.is_alive():
         con.interrupt()
         worker.join(5.0)
-        con.close()
+        try:
+            con.close()
+        except Exception:  # noqa: BLE001, S110 - best-effort cleanup after timeout
+            pass
         raise TimeoutError(
             f"Query exceeded the {env.SQL_TIMEOUT:.0f}s read-only cap and was cancelled."
         )
-    error = holder.get("error")
-    con.close()
-    if error is not None:
-        raise error  # type: ignore[misc]
-    return holder["df"]  # type: ignore[return-value]
+    try:
+        error = holder.get("error")
+        if error is not None:
+            raise error  # type: ignore[misc]
+        return holder["df"]  # type: ignore[return-value]
+    finally:
+        try:
+            con.close()
+        except Exception:  # noqa: BLE001, S110 - best-effort; connection may already be closed
+            pass
 
 
 def _table_markdown(df: pd.DataFrame, rows: int) -> str:

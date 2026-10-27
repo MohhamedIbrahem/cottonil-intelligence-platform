@@ -67,6 +67,32 @@ _MEMORY_WINDOW = 8                    # last 8 entries -> ~4 exchanges of contex
 # reuse ACCENT_SOFT). Anchors are the container keys declared below.
 _STYLE = f"""
 <style>
+/* ---- thinking indicator keyframes ---- */
+@keyframes assistant-pulse {{
+    0%, 80%, 100% {{ opacity: 0.3; transform: scale(0.8); }}
+    40% {{ opacity: 1; transform: scale(1.0); }}
+}}
+.assistant-thinking {{
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.6rem 0.8rem;
+}}
+.assistant-thinking span {{
+    background: {theme.ACCENT};
+    border-radius: 50%;
+    display: inline-block;
+    height: 8px;
+    width: 8px;
+    animation: assistant-pulse 1.4s ease-in-out infinite;
+}}
+.assistant-thinking span:nth-child(2) {{ animation-delay: 0.16s; }}
+.assistant-thinking span:nth-child(3) {{ animation-delay: 0.32s; }}
+.assistant-thinking-label {{
+    color: {theme.TEXT_MUTED};
+    font-size: 0.76rem;
+    margin-left: 6px;
+}}
 /* ---- floating action button (closed dock) ---- */
 .st-key-assistant-dock {{
     background: transparent;
@@ -81,7 +107,11 @@ _STYLE = f"""
     width: 60px;
     z-index: 1001;
 }}
-.st-key-assistant-dock button[data-testid="stBaseButton-secondary"] {{
+/* Button styling — targets Streamlit's button inside the dock container.
+   The data-testid selector is version-sensitive; the container-key selector
+   (.st-key-assistant-dock) is the stable anchor. */
+.st-key-assistant-dock button[data-testid="stBaseButton-secondary"],
+.st-key-assistant-dock button {{
     background: {theme.ACCENT};
     border-color: {theme.ACCENT};
     border-radius: 50%;
@@ -91,11 +121,11 @@ _STYLE = f"""
     transition: box-shadow 120ms ease, filter 120ms ease;
     width: 60px;
 }}
-.st-key-assistant-dock button[data-testid="stBaseButton-secondary"]:hover {{
+.st-key-assistant-dock button:hover {{
     box-shadow: 0 6px 18px rgba(23,54,93,0.22);
     filter: brightness(0.92);
 }}
-.st-key-assistant-dock button[data-testid="stBaseButton-secondary"] p {{
+.st-key-assistant-dock button p {{
     display: none; /* icon-only circle; the real label stays for screen readers */
 }}
 .st-key-assistant-dock button svg {{
@@ -129,12 +159,13 @@ _STYLE = f"""
     line-height: 1.4;
     margin-top: 0.1rem;
 }}
-.st-key-assistant-panel button[data-testid="stBaseButton-secondary"] {{
+/* Header buttons — fallback without data-testid for resilience */
+.st-key-assistant-panel button {{
     border-radius: 8px;
     min-height: 0;
     padding: 0.1rem 0.3rem;
 }}
-.st-key-assistant-panel button[data-testid="stBaseButton-secondary"] p {{
+.st-key-assistant-panel button p {{
     display: none; /* icon-only header buttons; `help` carries the meaning */
 }}
 .st-key-assistant-panel button svg {{
@@ -163,6 +194,15 @@ _STYLE = f"""
 .st-key-assistant-panel [data-baseweb="input"] > div {{
     background: {theme.CARD};
     border-color: {theme.BORDER};
+}}
+/* Truncation notice */
+.assistant-truncated {{
+    background: {theme.ACCENT_SOFT};
+    border-radius: 6px;
+    color: {theme.TEXT_MUTED};
+    font-size: 0.72rem;
+    margin-top: 0.3rem;
+    padding: 0.25rem 0.5rem;
 }}
 @media (max-width: 640px) {{
     .st-key-assistant-panel {{
@@ -249,7 +289,13 @@ def _process_pending() -> None:
         "request_id": state.get(_LAST_REQUEST_KEY),
     })
     try:
-        with st.spinner("Reading the dataset… (guarding SQL, executing read-only, narrating)"):
+        with st.chat_message("assistant"):
+            st.html(
+                '<div class="assistant-thinking">'
+                '<span></span><span></span><span></span>'
+                '<span class="assistant-thinking-label">Analysing…</span>'
+                '</div>'
+            )
             result = engine.ask(question, memory=_memory())
         state[_MSGS_KEY].append({
             "role": "assistant",
@@ -342,6 +388,14 @@ def _render_history() -> None:
             if narration and not message.get("refusal", False):
                 with st.expander("Copy / export this answer"):
                     st.code(narration, language="markdown")  # built-in copy button
+
+            if message.get("truncated", False):
+                st.html(
+                    '<div class="assistant-truncated">'
+                    '⚠ Results were limited to 200 rows. '
+                    'Refine your question for a narrower dataset.'
+                    '</div>'
+                )
 
             deep_key = next(
                 (VIEW_PAGE_MAP[s.split(".")[-1]] for s in message.get("sources", [])
