@@ -289,13 +289,7 @@ def _process_pending() -> None:
         "request_id": state.get(_LAST_REQUEST_KEY),
     })
     try:
-        with st.chat_message("assistant"):
-            st.html(
-                '<div class="assistant-thinking">'
-                '<span></span><span></span><span></span>'
-                '<span class="assistant-thinking-label">Analysing…</span>'
-                '</div>'
-            )
+        with st.spinner("Analysing…"):
             result = engine.ask(question, memory=_memory())
         state[_MSGS_KEY].append({
             "role": "assistant",
