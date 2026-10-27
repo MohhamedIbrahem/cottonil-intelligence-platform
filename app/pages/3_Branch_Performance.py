@@ -83,18 +83,18 @@ k_aov = k_net / max(k_orders, 1)
 k_active = int((cur_b.net > 0).sum())
 
 cards = st.columns(4)
-for col, (title, value, sub) in zip(
+for col, (title, value, sub, tone) in zip(
     cards,
     [
-        ("Net sales", theme.fmt_egp(k_net), f"vs {prev_label}" if prev_window else "all-time window"),
-        ("Active branches", str(k_active), f"of {len(cur_b)} with sales in window"),
-        ("Avg branch net", theme.fmt_egp(k_net / max(k_active, 1)), "mean net of active branches"),
-        ("Basket (AOV)", theme.fmt_egp(k_aov), "network-wide, guests included"),
+        ("Net sales", theme.fmt_egp(k_net), f"vs {prev_label}" if prev_window else "all-time window", "blue"),
+        ("Active branches", str(k_active), f"of {len(cur_b)} with sales in window", "teal"),
+        ("Avg branch net", theme.fmt_egp(k_net / max(k_active, 1)), "mean net of active branches", "violet"),
+        ("Basket (AOV)", theme.fmt_egp(k_aov), "network-wide, guests included", "amber"),
     ],
     strict=True,
 ):
     with col:
-        theme.kpi_card(title, value, sub=sub)
+        theme.kpi_card(title, value, sub=sub, tone=tone)
 
 st.divider()
 

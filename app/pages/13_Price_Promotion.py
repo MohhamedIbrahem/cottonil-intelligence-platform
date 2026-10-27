@@ -87,24 +87,28 @@ with cards[0]:
         "Weighted discount rate",
         f"{discount_rate:.1%}",
         sub=f"{discounted_net_share:.0%} of net sales carried a discount",
+        tone="amber",
     )
 with cards[1]:
     theme.kpi_card(
         "Gross margin",
         f"{margin:.1%}",
         sub="recorded unit cost · excludes operating expenses",
+        tone="green",
     )
 with cards[2]:
     theme.kpi_card(
         "Discounted SKU-months",
         f"{discounted_sku_share:.0%}",
         sub=f"{int(period.discounted_sku_months):,} of {int(period.sku_months):,} rows in the window",
+        tone="rose",
     )
 with cards[3]:
     theme.kpi_card(
         "Price response β",
         f"{beta:+.2f}",
         sub=f"SE {beta_se:.2f} · within-R² {within_r2:.4f} · all-history model",
+        tone="violet",
     )
 
 if beta >= 0 or within_r2 < 0.01:

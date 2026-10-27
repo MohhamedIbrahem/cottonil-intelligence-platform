@@ -71,20 +71,20 @@ items_order_prev = None if prior is None else float(prior.units) / max(float(pri
 
 k_cards = [
     ("Net sales", theme.fmt_egp(float(cur.net)),
-     _delta(cur.net, None if prior is None else prior.net), "line net after discounts"),
+     _delta(cur.net, None if prior is None else prior.net), "line net after discounts", "blue"),
     ("Orders", theme.fmt_int(float(cur.orders)),
-     _delta(cur.orders, None if prior is None else prior.orders), "distinct order heads"),
+     _delta(cur.orders, None if prior is None else prior.orders), "distinct order heads", "teal"),
     ("Avg order value", theme.fmt_egp(aov_cur),
-     _delta(aov_cur, aov_prev), "net / orders"),
+     _delta(aov_cur, aov_prev), "net / orders", "violet"),
     ("Items per order", f"{items_order_cur:,.2f}",
-     _delta(items_order_cur, items_order_prev), "units / orders"),
+     _delta(items_order_cur, items_order_prev), "units / orders", "rose"),
     ("Units sold", theme.fmt_int(float(cur.units)),
-     _delta(cur.units, None if prior is None else prior.units), "pieces across lines"),
+     _delta(cur.units, None if prior is None else prior.units), "pieces across lines", "amber"),
 ]
 cols = st.columns(5)
-for col, (title, value, delta, sub) in zip(cols, k_cards, strict=True):
+for col, (title, value, delta, sub, tone) in zip(cols, k_cards, strict=True):
     with col:
-        theme.kpi_card(title, value, delta=delta[0], delta_up=delta[1], delta_good=delta[2], sub=sub)
+        theme.kpi_card(title, value, delta=delta[0], delta_up=delta[1], delta_good=delta[2], sub=sub, tone=tone)
 
 st.divider()
 
@@ -103,8 +103,8 @@ trend["month"] = pd.to_datetime(trend.ym + "-01")
 trend_fig = go.Figure()
 trend_fig.add_trace(go.Scatter(
     x=trend.month, y=trend.net, name="Net sales",
-    mode="lines+markers", line={"width": 3, "color": theme.ACCENT_2},
-    fill="tozeroy", fillcolor=theme.ACCENT_2_SOFT,
+    mode="lines+markers", line={"width": 3, "color": theme.ACCENT},
+    fill="tozeroy", fillcolor=theme.ACCENT_SOFT,
     hovertemplate="%{x|%b %Y}: EGP %{y:,.0f}<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(

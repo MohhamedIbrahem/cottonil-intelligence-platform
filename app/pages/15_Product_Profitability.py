@@ -120,24 +120,28 @@ with cards[0]:
         "Net sales",
         theme.fmt_egp(net_sales),
         sub=f"{theme.fmt_int(float(period.units or 0))} units · {int(period.sku_months):,} SKU-months",
+        tone="blue",
     )
 with cards[1]:
     theme.kpi_card(
         "Gross profit",
         theme.fmt_egp(gross_profit),
         sub="recorded unit cost · excludes operating expenses",
+        tone="green",
     )
 with cards[2]:
     theme.kpi_card(
         "Gross margin",
         f"{margin:.1%}",
         sub="weighted across all SKU-months in the window",
+        tone="teal",
     )
 with cards[3]:
     theme.kpi_card(
         "Low-margin net exposure",
         f"{low_margin_share:.1%}",
         sub=f"{low_row_share:.1%} of SKU-months sit below {LOW_MARGIN:.0%}",
+        tone="red",
     )
 
 st.divider()

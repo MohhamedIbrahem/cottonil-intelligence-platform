@@ -65,24 +65,28 @@ with cards[0]:
         "Governorates with a branch",
         f"{len(gap)} / {len(gap)}",
         sub="no greenfield whitespace · one branch minimum",
+        tone="teal",
     )
 with cards[1]:
     theme.kpi_card(
         "Branches",
         theme.fmt_int(total_branches),
         sub=f"{retail_branches} retail · {reseller_pos_branches} POS/reseller",
+        tone="blue",
     )
 with cards[2]:
     theme.kpi_card(
         "Resident buyers per branch",
         theme.fmt_int(national_buyers_per_branch),
         sub=f"{theme.fmt_int(total_buyers)} buyers ÷ {total_branches} branches · range 168–3,530",
+        tone="violet",
     )
 with cards[3]:
     theme.kpi_card(
         "Branch POS per branch",
         theme.fmt_egp(pos_per_branch),
         sub="Retail POS only · range EGP 5.06M–5.28M · nearly uniform",
+        tone="rose",
     )
 
 st.divider()

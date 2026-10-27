@@ -50,10 +50,10 @@ def _prior(prior: dict | None, key: str):
     return None if prior is None else prior[key]
 
 
-def _card(col, title: str, value: str, delta: tuple, sub: str) -> None:
+def _card(col, title: str, value: str, delta: tuple, sub: str, tone: str | None = None) -> None:
     text, up, good = delta
     with col:
-        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub)
+        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub, tone=tone)
 
 
 # ----------------------------------------------------------- procurement KPIs --
@@ -101,22 +101,22 @@ cards = st.columns(4)
 _card(
     cards[0], "Purchase orders", theme.fmt_int(cur["pos"]),
     _delta(cur["pos"], _prior(pri, "pos")),
-    f"{cur['suppliers']} suppliers · {cur['partial_pos']:,} partial receipts",
+    f"{cur['suppliers']} suppliers · {cur['partial_pos']:,} partial receipts", "teal",
 )
 _card(
     cards[1], "PO value", theme.fmt_egp(cur["value"]),
     _delta(cur["value"], _prior(pri, "value")),
-    "A1: absolute-only - never compare to COGS/revenue",
+    "A1: absolute-only - never compare to COGS/revenue", "blue",
 )
 _card(
     cards[2], "Avg lead time", f"{cur['lead_days']:.1f} days",
     _delta(cur["lead_days"], _prior(pri, "lead_days"), lower_is_better=True),
-    "PO date to item delivery date",
+    "PO date to item delivery date", "amber",
 )
 _card(
     cards[3], "On-time rate", theme.fmt_pct(cur["on_time_rate"]),
     _delta(cur["on_time_rate"], _prior(pri, "on_time_rate")),
-    "within payment terms; no contractual promise date",
+    "within payment terms; no contractual promise date", "green",
 )
 
 st.divider()

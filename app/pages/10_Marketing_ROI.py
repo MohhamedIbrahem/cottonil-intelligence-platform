@@ -50,10 +50,10 @@ def _prior(prior: dict | None, key: str):
     return None if prior is None else prior[key]
 
 
-def _card(col, title: str, value: str, delta: tuple, sub: str) -> None:
+def _card(col, title: str, value: str, delta: tuple, sub: str, tone: str | None = None) -> None:
     text, up, good = delta
     with col:
-        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub)
+        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub, tone=tone)
 
 
 # ------------------------------------------------------------- campaign KPIs --
@@ -109,22 +109,22 @@ cards = st.columns(4)
 _card(
     cards[0], "Campaign spend", theme.fmt_egp(cur["spend"]),
     _delta(cur["spend"], _prior(pri, "spend")),
-    f"{cur['campaigns']:,} campaigns · {cur['budget_utilization']:.1%} of budget",
+    f"{cur['campaigns']:,} campaigns · {cur['budget_utilization']:.1%} of budget", "amber",
 )
 _card(
     cards[1], "Attributed net", theme.fmt_egp(cur["net"]),
     _delta(cur["net"], _prior(pri, "net")),
-    "A2: real orders in window × governorate",
+    "A2: real orders in window × governorate", "blue",
 )
 _card(
     cards[2], "ROAS", f"{cur['roas']:.2f}x",
     _delta(cur["roas"], _prior(pri, "roas")),
-    f"CPA EGP {cur['cpa']:,.0f} · directional, not causal",
+    f"CPA EGP {cur['cpa']:,.0f} · directional, not causal", "green",
 )
 _card(
     cards[3], "CTR", theme.fmt_pct(cur["ctr"]),
     _delta(cur["ctr"], _prior(pri, "ctr")),
-    f"{cur['clicks']:,} clicks / {cur['impressions']:,} impressions",
+    f"{cur['clicks']:,} clicks / {cur['impressions']:,} impressions", "teal",
 )
 
 st.divider()

@@ -23,10 +23,13 @@ start, end, label, _ = selected_period()
 ym_start, ym_end = start.strftime("%Y-%m"), end.strftime("%Y-%m")
 
 CHANNELS = ["Retail POS", "Wholesale / reseller", "E-commerce"]
+# Channel identity colours — aligned with the coordinated chart sequence order
+# used by the channel-mix pies everywhere (net-ranked: POS first, then
+# wholesale, then e-commerce), so the same channel owns the same hue app-wide.
 CHANNEL_COLORS = {
     "Retail POS": theme.ACCENT,
-    "Wholesale / reseller": theme.ACCENT_2,
-    "E-commerce": theme.WARN,
+    "Wholesale / reseller": theme.TEAL,
+    "E-commerce": theme.VIOLET,
 }
 
 trend = data.q(
@@ -133,12 +136,14 @@ with cards[0]:
         "Net sales · all channels",
         theme.fmt_egp(total_net),
         sub=f"{theme.fmt_int(total_orders)} orders · {theme.fmt_int(float(channel_kpis.units_sold.sum()))} units",
+        tone="blue",
     )
 with cards[1]:
     theme.kpi_card(
         "E-commerce share",
         f"{ecom_share:.1%}",
         sub="of net sales · online is the smallest of the three channels",
+        tone="violet",
     )
 with cards[2]:
     theme.kpi_card(
@@ -148,12 +153,14 @@ with cards[2]:
             f"{multi_customers:,} of {cross_customers:,} identified buyers · "
             f"{multi_revenue_share:.1%} of net sales"
         ),
+        tone="teal",
     )
 with cards[3]:
     theme.kpi_card(
         "Return rate",
         f"{overall_return_rate:.1%}",
         sub=f"{theme.fmt_int(overall_returns)} returned orders / orders in window",
+        tone="red",
     )
 
 st.divider()

@@ -136,24 +136,28 @@ with cards[0]:
         f"Avg paid employees · {REFERENCE_YEAR}",
         theme.fmt_int(avg_paid),
         sub="payroll-covered headcount per month · 640 employees ever attached",
+        tone="teal",
     )
 with cards[1]:
     theme.kpi_card(
         f"Net payroll · {REFERENCE_YEAR}",
         theme.fmt_egp(net_paid),
         sub="base + overtime + bonus − deductions · no employer burden",
+        tone="amber",
     )
 with cards[2]:
     theme.kpi_card(
         f"Labor cost ratio · {REFERENCE_YEAR}",
         f"{labor_ratio:.1%}",
         sub="net paid / sales in the same payroll-covered branch-months",
+        tone="violet",
     )
 with cards[3]:
     theme.kpi_card(
         "Sales per paid employee",
         theme.fmt_egp(sales_per_employee_month),
         sub=f"monthly · payroll {theme.fmt_egp(pay_per_employee_month)} per employee-month",
+        tone="green",
     )
 
 st.divider()

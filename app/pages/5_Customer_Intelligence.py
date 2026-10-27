@@ -234,21 +234,21 @@ def _render_ci() -> None:
 
     repeat_rate = float(window_stats.repeat_customers) / max(float(window_stats.active), 1)
     k_cards = st.columns(5)
-    for col, (title, value, sub) in zip(
+    for col, (title, value, sub, tone) in zip(
         k_cards,
         [
-            ("Active customers", theme.fmt_int(float(window_stats.active)), f"bought in {label.split(' (')[0]}"),
+            ("Active customers", theme.fmt_int(float(window_stats.active)), f"bought in {label.split(' (')[0]}", "violet"),
             ("Repeat rate", theme.fmt_pct(repeat_rate),
-             f"{int(window_stats.repeat_customers):,} with \u22652 orders in window"),
-            ("New catalog sign-ups", theme.fmt_int(float(new_signups)), "joined within window"),
-            ("Catalog customers", f"{int(catalog.customers):,}", "85K marketing catalog · all-time"),
+             f"{int(window_stats.repeat_customers):,} with \u22652 orders in window", "teal"),
+            ("New catalog sign-ups", theme.fmt_int(float(new_signups)), "joined within window", "green"),
+            ("Catalog customers", f"{int(catalog.customers):,}", "85K marketing catalog · all-time", "blue"),
             ("Never purchased", theme.fmt_pct(float(catalog.never_bought) / float(catalog.customers)),
-             f"{int(catalog.never_bought):,} catalog-only (no order)"),
+             f"{int(catalog.never_bought):,} catalog-only (no order)", "amber"),
         ],
         strict=True,
     ):
         with col:
-            theme.kpi_card(title, value, sub=sub)
+            theme.kpi_card(title, value, sub=sub, tone=tone)
 
     st.divider()
 
@@ -431,24 +431,28 @@ def _render_clv() -> None:
             "Buyers",
             theme.fmt_int(float(buyers)),
             sub=f"{buyer_share:.1%} of {catalog:,} cataloged customers · rest never purchased",
+            tone="violet",
         )
     with cards[1]:
         theme.kpi_card(
             "Historical CLV",
             theme.fmt_egp(float(profile.clv)),
             sub="lifetime gross profit across identified buyers · excludes guests",
+            tone="blue",
         )
     with cards[2]:
         theme.kpi_card(
             "Median buyer CLV",
             theme.fmt_egp(float(profile.median_clv)),
             sub=f"top 10% of buyers hold {top_decile_share:.1%} of historical CLV",
+            tone="teal",
         )
     with cards[3]:
         theme.kpi_card(
             "Churn rate",
             f"{churn_rate:.1%}",
             sub=f"{churned:,} of {eligible:,} eligible buyers · 365+ days since last order",
+            tone="red",
         )
 
     st.divider()
@@ -595,24 +599,28 @@ def _render_clv() -> None:
             "Holdout AUC",
             f"{churn['auc']:.3f}",
             sub="0.50 = coin flip · higher is better",
+            tone="violet",
         )
     with model_cards[1]:
         theme.kpi_card(
             "Base churn",
             f"{churn['base_churn']:.1%}",
             sub=f"{churn['n_test']:,} test customers · 12-month label",
+            tone="teal",
         )
     with model_cards[2]:
         theme.kpi_card(
             "Predicted churn",
             f"{churn['predicted_churn']:.1%}",
             sub="average model score in the holdout",
+            tone="amber",
         )
     with model_cards[3]:
         theme.kpi_card(
             "Accuracy",
             f"{churn['accuracy']:.1%}",
             sub="majority-class baseline · not evidence of skill",
+            tone="green",
         )
 
     st.warning(analytics.discrimination_note(float(churn["auc"])))

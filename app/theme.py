@@ -1,8 +1,10 @@
 """Design system for the Cottonil Intelligence Platform (light theme).
 
-Presentation only: tokens, typography, cards, status chips, page headers and a
-single Plotly template. Every number on screen still comes from the curated
-views; this module never queries or calculates business metrics.
+Presentation only: tokens (brand navy + coordinated blue/teal/violet/amber/
+rose/green/red chart family), typography, the brand-navy sidebar, cards, KPI
+tone strips, status chips, page headers and a single Plotly template. Every
+number on screen still comes from the curated views; this module never queries
+or calculates business metrics. PALETTE.md documents these exact tokens.
 """
 
 from __future__ import annotations
@@ -18,22 +20,32 @@ import streamlit as st
 #   TEXT 15.9:1 | NAVY 11.4:1 | MUTED 4.8:1 | ACCENT 4.5:1
 #   GOOD 5.9:1 | BAD 6.6:1 | WARN 5.0:1
 # ACCENT_2 is a graphic/large-area colour, not a text colour on white.
-BG = "#F5F7FB"
-CARD = "#FFFFFF"
-CARD_2 = "#EDF2F7"
-NAVY = "#17365D"
-ACCENT = "#2878D0"
-ACCENT_2 = "#56A6E8"
+BG = "#F5F7FB"          # page background (light)
+CARD = "#FFFFFF"        # card / panel / table surface
+CARD_2 = "#EDF2F7"      # secondary surface: inputs, code chips, light fills
+NAVY = "#17365D"        # brand identity: sidebar background, major headings
+ACCENT = "#2878D0"      # primary blue: actions, active nav, main chart series
+ACCENT_2 = "#56A6E8"    # light blue: large-area graphic colour (never body text)
 TEXT = "#172B4D"
 TEXT_MUTED = "#64748B"
 BORDER = "#DCE4EE"
 GRID = "#E8EEF7"
 
-GOOD = "#157347"
-BAD = "#B42318"
-WARN = "#B45309"
+GOOD = "#157347"        # semantic positive text/chip colour (AA on white)
+BAD = "#B42318"         # semantic negative text/chip colour
+WARN = "#B45309"        # semantic warning text/chip colour
 NEUTRAL = "#94A3B8"
 PIE_TEXT = "#FFFFFF"
+
+# Coordinated chart family (saturated — chart series, accents, indicators only;
+# never a card background). Text/status chips keep the darker semantic trio.
+TEAL = "#14B8A6"        # sales channels, operations, secondary series
+VIOLET = "#8B5CF6"      # customer intelligence, segmentation, model identity
+AMBER = "#F59E0B"       # promotions and attention indicators (charts)
+ROSE = "#E879A9"        # product analytics and category comparisons
+GREEN = "#16A34A"       # positive performance lines/bands (chips use GOOD)
+RED = "#EF4444"         # losses and risk lines/bands (chips use BAD)
+ORANGE = "#C2410C"      # inventory signal colour: low-cover band (14-30d)
 
 ACCENT_2_SOFT = "rgba(86,166,232,0.16)"
 ACCENT_SOFT = "rgba(40,120,208,0.10)"
@@ -41,15 +53,19 @@ GOOD_SOFT = "rgba(21,115,71,0.10)"
 BAD_SOFT = "rgba(180,35,24,0.08)"
 WARN_SOFT = "rgba(180,83,9,0.10)"
 
+# Chart categorical sequence: the first seven follow the platform palette in a
+# coordinated rotation; the tail pads dense categorical mixes (up to ~10 slices).
 COLORS = [
     ACCENT,
+    TEAL,
+    VIOLET,
+    AMBER,
+    ROSE,
+    GREEN,
+    RED,
     ACCENT_2,
     NAVY,
-    "#0E7490",
-    WARN,
-    GOOD,
-    "#7C5CD6",
-    BAD,
+    NEUTRAL,
 ]
 
 FONT_STACK = '"Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif'
@@ -66,6 +82,12 @@ CSS = f"""
     --cottonil-navy: {NAVY};
     --cottonil-accent: {ACCENT};
     --cottonil-accent-2: {ACCENT_2};
+    --cottonil-teal: {TEAL};
+    --cottonil-violet: {VIOLET};
+    --cottonil-amber: {AMBER};
+    --cottonil-rose: {ROSE};
+    --cottonil-green: {GREEN};
+    --cottonil-red: {RED};
     --cottonil-text: {TEXT};
     --cottonil-muted: {TEXT_MUTED};
     --cottonil-border: {BORDER};
@@ -105,56 +127,84 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {{
 }}
 
 /* ---------------------------------------------------------------- sidebar -- */
+/* Brand navy sidebar: the grouped nav and the pinned brand header both live
+   on NAVY; filter widgets the pages add (selects, radios) stay white inputs. */
 [data-testid="stSidebar"] {{
-    background: {CARD};
-    border-right: 1px solid {BORDER};
+    background: {NAVY};
+    border-right: 1px solid rgba(9, 20, 38, 0.35);
 }}
 [data-testid="stSidebar"] > div {{
     background: transparent;
 }}
 [data-testid="stSidebarContent"] {{
-    padding: 0.9rem 0.95rem 2rem 0.95rem;
+    padding: 0.2rem 0.95rem 2rem 0.95rem;
+    /* The empty top strip is owned by stSidebarHeader (logo spacer + collapse
+       control). Keep the scroll container static so the pinned brand header
+       resolves against stSidebar and stays visible while content scrolls. */
+    position: static;
+}}
+[data-testid="stSidebarHeader"] {{
+    height: 64px;
+    min-height: 64px;
+    margin: 0;
+    padding: 0;
+    position: relative;    /* keeps the collapse control above the brand row */
+    z-index: 3;
+}}
+[data-testid="stSidebarCollapseButton"] {{
+    position: absolute;
+    right: 10px;
+    top: 18px;
+    z-index: 4;
 }}
 [data-testid="stSidebarNav"] {{
     padding-top: 0.25rem;
 }}
+[data-testid="stSidebarNavSeparator"] {{
+    display: none;         /* the brand header draws the divider */
+}}
 [data-testid="stSidebarNav"] a {{
     border-radius: 9px;
-    color: {TEXT};
+    color: #CFDDF2;
     margin: 1px 0;
     padding: 4px 8px;
 }}
 [data-testid="stSidebarNav"] a:hover {{
-    background: {CARD_2};
-    color: {NAVY};
+    background: rgba(255, 255, 255, 0.09);
+    color: #FFFFFF;
 }}
 [data-testid="stSidebarNav"] a[aria-current="page"] {{
-    background: {ACCENT_SOFT};
-    color: {ACCENT};
+    background: rgba(86, 166, 232, 0.26);
+    color: #FFFFFF;
     font-weight: 700;
 }}
 [data-testid="stSidebar"] label {{
-    color: {TEXT};
+    color: #CFDDF2;
     font-size: 0.82rem;
     font-weight: 650;
 }}
 [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
 [data-testid="stSidebar"] [data-testid="stCaptionContainer"] {{
-    color: {TEXT_MUTED};
+    color: #A8BBD8;
 }}
 [data-testid="stSidebar"] [role="radiogroup"] label {{
     border-radius: 8px;
     padding: 0.28rem 0.35rem;
 }}
 [data-testid="stSidebar"] [role="radiogroup"] label:hover {{
-    background: {CARD_2};
+    background: rgba(255, 255, 255, 0.10);
+}}
+[data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked),
+[data-testid="stSidebar"] [data-testid="stRadioOption"][data-selected="true"] {{
+    background: rgba(86, 166, 232, 0.26);
+    color: #FFFFFF;
 }}
 
 /* Grouped sidebar navigation: compact uppercase section labels and a
    clearly visible active page, using existing tokens only. */
 [data-testid="stNavSectionHeader"] {{
     border-radius: 8px;
-    color: {TEXT_MUTED};
+    color: #8FA6C8;        /* brand-tinted group label on navy */
     font-size: 0.66rem;
     font-weight: 750;
     letter-spacing: 0.11em;
@@ -169,30 +219,49 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {{
 }}
 [data-testid="stSidebarNavLink"] {{
     border-radius: 9px;
+    color: #CFDDF2;
     font-size: 0.86rem;
     padding: 5px 8px;
 }}
 [data-testid="stSidebarNavLink"][aria-current="page"] {{
-    background: {ACCENT_SOFT};
-    color: {ACCENT};
+    background: rgba(86, 166, 232, 0.26);
+    color: #FFFFFF;
     font-weight: 700;
 }}
 [data-testid="stSidebarNavLink"] span {{
     font-size: inherit;
 }}
 
-.cottonil-brand {{
+/* Brand header, pinned over the empty top strip (§ sidebar shell): Streamlit
+   mounts stSidebarNav above all entrypoint sidebar content, so the brand block
+   is absolutely positioned against stSidebar with an opaque navy background —
+   nav links slide beneath it when the sidebar scrolls. */
+[data-testid="stSidebarUserContent"] div.stElementContainer:has(> div .cottonil-brand) {{
+    position: static;
+}}
+[data-testid="stSidebarUserContent"] .cottonil-brand {{
     align-items: center;
-    border-bottom: 1px solid {BORDER};
+    background: {NAVY};
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
     display: flex;
     gap: 0.65rem;
-    margin: 0.15rem 0 0.9rem;
-    padding: 0.15rem 0.1rem 0.85rem;
+    left: 20px;
+    margin: 0;
+    padding: 0.15rem 0.1rem 0.8rem;
+    position: absolute;
+    right: 20px;
+    top: 16px;
+    z-index: 1;
 }}
 .cottonil-brand-mark {{
     align-items: center;
-    background: linear-gradient(135deg, {NAVY} 0%, {ACCENT} 100%);
+    /* Woven-textile brand mark: crosshatch threads over the brand blue. */
+    background:
+        repeating-linear-gradient(90deg, rgba(255,255,255,0.22) 0 2px, transparent 2px 7px),
+        repeating-linear-gradient(0deg, rgba(10,25,47,0.18) 0 2px, transparent 2px 7px),
+        linear-gradient(135deg, {ACCENT_2} 0%, {ACCENT} 65%, #1F63B0 100%);
     border-radius: 10px;
+    box-shadow: 0 1px 4px rgba(6, 20, 40, 0.35);
     color: #FFFFFF;
     display: flex;
     font-size: 0.95rem;
@@ -203,14 +272,14 @@ html, body, [class*="css"], [data-testid="stAppViewContainer"] {{
     width: 36px;
 }}
 .cottonil-brand-name {{
-    color: {NAVY};
+    color: #FFFFFF;
     font-size: 0.80rem;
     font-weight: 800;
     letter-spacing: 0.11em;
     line-height: 1.2;
 }}
 .cottonil-brand-sub {{
-    color: {TEXT_MUTED};
+    color: #9CB6DB;
     font-size: 0.68rem;
     letter-spacing: 0.02em;
     margin-top: 0.12rem;
@@ -432,6 +501,29 @@ a:hover {{
     opacity: 0.9;
     position: absolute;
 }}
+/* Restrained per-metric accent strips (§5). The strip only adds a small visual
+   identity; values, labels and the good/bad delta chips stay authoritative. */
+.cottonil-kpi.tone-blue::before {{
+    background: linear-gradient(90deg, {ACCENT}, {ACCENT_2});
+}}
+.cottonil-kpi.tone-teal::before {{
+    background: linear-gradient(90deg, {TEAL}, #0D9488);
+}}
+.cottonil-kpi.tone-violet::before {{
+    background: linear-gradient(90deg, {VIOLET}, #7C3AED);
+}}
+.cottonil-kpi.tone-amber::before {{
+    background: linear-gradient(90deg, {AMBER}, #D97706);
+}}
+.cottonil-kpi.tone-rose::before {{
+    background: linear-gradient(90deg, {ROSE}, #DB6D97);
+}}
+.cottonil-kpi.tone-green::before {{
+    background: linear-gradient(90deg, {GREEN}, #15803D);
+}}
+.cottonil-kpi.tone-red::before {{
+    background: linear-gradient(90deg, {RED}, #DC2626);
+}}
 .cottonil-kpi .cpi-title {{
     color: {TEXT_MUTED};
     font-size: 0.71rem;
@@ -492,7 +584,7 @@ a:hover {{
 
 /* ------------------------------------------------------- sidebar footer -- */
 .cottonil-sidebar-footer {{
-    color: {TEXT_MUTED};
+    color: #A8BBD8;
     display: flex;
     align-items: center;
     gap: 0.45rem;
@@ -502,7 +594,7 @@ a:hover {{
     margin-top: 0.55rem;
 }}
 .cottonil-sidebar-footer b {{
-    color: {TEXT};
+    color: #CFDDF2;
     font-weight: 650;
 }}
 
@@ -705,13 +797,30 @@ def _inline(text: str) -> str:
 
 
 def apply_theme() -> None:
-    """Apply the global stylesheet and the sidebar brand mark."""
+    """Apply the global stylesheet and the sidebar brand header.
+
+    The brand block is rendered once by the shell (`Home.py` is the runtime
+    entrypoint for every registered page, `st.navigation` re-runs it on each
+    switch) and styled at the top of the sidebar by the CSS above.
+    The version line comes from the installed package metadata
+    (`pyproject.toml [project] version`); it is omitted when the metadata is
+    unavailable rather than hardcoding a number.
+    """
+    version = ""
+    try:
+        from importlib.metadata import version as _pkg_version
+
+        version = f" \u00b7 v{_pkg_version('cottonil')}"
+    except Exception:  # noqa: BLE001 - cosmetic line, never fatal
+        version = ""
     st.markdown(CSS, unsafe_allow_html=True)
     st.sidebar.markdown(
         '<div class="cottonil-brand">'
         '<div class="cottonil-brand-mark" aria-hidden="true">C</div>'
-        '<div><div class="cottonil-brand-name">COTTONIL</div>'
-        '<div class="cottonil-brand-sub">Intelligence Platform</div></div>'
+        "<div>"
+        '<div class="cottonil-brand-name">COTTONIL</div>'
+        f'<div class="cottonil-brand-sub">Business Assistant{version}</div>'
+        "</div>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -805,6 +914,9 @@ def sidebar_footer(*, data_through: str, connected: bool) -> None:
     )
 
 
+KPI_TONES = frozenset({"blue", "teal", "violet", "amber", "rose", "green", "red"})
+
+
 def kpi_card(
     title: str,
     value: str,
@@ -813,8 +925,16 @@ def kpi_card(
     delta_up: bool = True,
     delta_good: bool = True,
     sub: str | None = None,
+    tone: str | None = None,
 ) -> None:
-    """Render a KPI tile with a direction arrow plus a good/bad/neutral status."""
+    """Render a KPI tile with a direction arrow plus a good/bad/neutral status.
+
+    `tone` selects the small top accent strip colour (blue/teal/violet/amber/
+    rose/green/red). It is purely a visual family tag for the metric; the
+    good/bad delta chip keeps its own semantic colouring. Unknown tones are
+    ignored (defaulting to the primary blue gradient).
+    """
+    tone_class = f" tone-{tone}" if tone in KPI_TONES else ""
     delta_html = ""
     if delta:
         cleaned = delta.strip()
@@ -838,7 +958,7 @@ def kpi_card(
                 )
     sub_row = f'<div class="cpi-sub">{html.escape(sub)}</div>' if sub else ""
     st.markdown(
-        f'<div class="cottonil-kpi">'
+        f'<div class="cottonil-kpi{tone_class}">'
         f'<div class="cpi-title">{html.escape(title)}</div>'
         f'<div class="cpi-value">{html.escape(value)}</div>'
         f"{delta_html}{sub_row}"
@@ -897,7 +1017,11 @@ def apply_plotly_style(fig) -> None:
             "bgcolor": "rgba(0,0,0,0)",
         },
         hovermode="x unified",
-        hoverlabel={"bgcolor": CARD, "bordercolor": BORDER, "font": {"color": TEXT}},
+        hoverlabel={
+            "bgcolor": CARD,
+            "bordercolor": BORDER,
+            "font": {"color": TEXT, "family": FONT_STACK, "size": 12},
+        },
         colorway=COLORS,
         separators=".,",
     )

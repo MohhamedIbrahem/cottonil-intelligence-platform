@@ -63,12 +63,14 @@ with c1:
         "Net sales · all time",
         theme.fmt_egp(float(_head.net)),
         sub=f"excl. 14% VAT · {float(_head.months):,.0f} months of data",
+        tone="blue",
     )
 with c2:
     theme.kpi_card(
         "Orders · all time",
         theme.fmt_int(float(_head.orders)),
         sub="line-level spine: views.sales_enriched",
+        tone="teal",
     )
 with c3:
     theme.kpi_card(
@@ -76,12 +78,14 @@ with c3:
         theme.fmt_int(float(_dims.customers)),
         sub=f"{theme.fmt_int(float(_dims.buyers))} with ≥1 order "
         f"({float(_dims.buyers) / float(_dims.customers):.0%}) - rest are catalog-only",
+        tone="violet",
     )
 with c4:
     theme.kpi_card(
         "Branches",
         theme.fmt_int(float(_dims.branches)),
         sub=f"across {int(_dims.governorates)} governorates",
+        tone="rose",
     )
 
 st.divider()
@@ -128,24 +132,24 @@ else:
 
 kpi_cards = [
     ("Net sales (excl. VAT)", theme.fmt_egp(float(cur.net)),
-     _delta(cur.net, None if prior is None else prior.net), "EGP after discounts"),
+     _delta(cur.net, None if prior is None else prior.net), "EGP after discounts", "blue"),
     ("Gross profit", theme.fmt_egp(float(cur.gross_profit)),
      _delta(cur.gross_profit, None if prior is None else prior.gross_profit),
-     "margin_EGP as recorded (deck: 'الربح')"),
+     "margin_EGP as recorded (deck: 'الربح')", "green"),
     ("Orders", theme.fmt_int(float(cur.orders)),
      _delta(cur.orders, None if prior is None else prior.orders),
-     "distinct order heads in window"),
+     "distinct order heads in window", "teal"),
     ("Active customers", theme.fmt_int(float(cur.customers)),
      _delta(cur.customers, None if prior is None else prior.customers),
-     "distinct logged-in buyers (guests excluded by definition, A4)"),
+     "distinct logged-in buyers (guests excluded by definition, A4)", "violet"),
     ("Return rate", theme.fmt_pct(rate_cur), rate_delta,
-     "orders with \u22651 return / all placed orders"),
+     "orders with \u22651 return / all placed orders", "red"),
 ]
 
 cols = st.columns(5)
-for col, (title, value, delta, sub) in zip(cols, kpi_cards, strict=True):
+for col, (title, value, delta, sub, tone) in zip(cols, kpi_cards, strict=True):
     with col:
-        theme.kpi_card(title, value, delta=delta[0], delta_up=delta[1], delta_good=delta[2], sub=sub)
+        theme.kpi_card(title, value, delta=delta[0], delta_up=delta[1], delta_good=delta[2], sub=sub, tone=tone)
 
 st.divider()
 
@@ -164,8 +168,8 @@ trend["month"] = pd.to_datetime(trend.ym + "-01")
 trend_fig = go.Figure()
 trend_fig.add_trace(go.Scatter(
     x=trend.month, y=trend.net, name="Net sales",
-    mode="lines+markers", line={"width": 3, "color": theme.ACCENT_2},
-    fill="tozeroy", fillcolor=theme.ACCENT_2_SOFT,
+    mode="lines+markers", line={"width": 3, "color": theme.ACCENT},
+    fill="tozeroy", fillcolor=theme.ACCENT_SOFT,
     hovertemplate="%{x|%b %Y}: EGP %{y:,.0f}<extra></extra>",
 ))
 trend_fig.add_trace(go.Scatter(

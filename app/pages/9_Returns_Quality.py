@@ -50,10 +50,10 @@ def _prior(prior: dict | None, key: str):
     return None if prior is None else prior[key]
 
 
-def _card(col, title: str, value: str, delta: tuple, sub: str) -> None:
+def _card(col, title: str, value: str, delta: tuple, sub: str, tone: str | None = None) -> None:
     text, up, good = delta
     with col:
-        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub)
+        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub, tone=tone)
 
 
 # --------------------------------------------------------------- return KPIs --
@@ -118,22 +118,22 @@ cards = st.columns(4)
 _card(
     cards[0], "Returns", theme.fmt_int(cur["returns"]),
     _delta(cur["returns"], _prior(pri, "returns"), lower_is_better=True),
-    f"{cur['returned_orders']:,} orders · {cur['units']:,} units",
+    f"{cur['returned_orders']:,} orders · {cur['units']:,} units", "rose",
 )
 _card(
     cards[1], "Refund (capped)", theme.fmt_egp(cur["refund"]),
     _delta(cur["refund"], _prior(pri, "refund"), lower_is_better=True),
-    f"{cur['refund_rate']:.2%} of net sales · avg EGP {cur['avg_refund']:,.0f} per return",
+    f"{cur['refund_rate']:.2%} of net sales · avg EGP {cur['avg_refund']:,.0f} per return", "amber",
 )
 _card(
     cards[2], "Return rate", theme.fmt_pct(cur["return_rate"]),
     _delta(cur["return_rate"], _prior(pri, "return_rate"), lower_is_better=True),
-    f"{cur['returned_orders']:,} returned / {cur['orders']:,} orders in window",
+    f"{cur['returned_orders']:,} returned / {cur['orders']:,} orders in window", "red",
 )
 _card(
     cards[3], "Defect claims", theme.fmt_int(cur["defect_returns"]),
     _delta(cur["defect_returns"], _prior(pri, "defect_returns"), lower_is_better=True),
-    f"{cur['defect_share']:.1%} of returns · no inspection funnel",
+    f"{cur['defect_share']:.1%} of returns · no inspection funnel", "violet",
 )
 
 st.divider()

@@ -50,7 +50,7 @@ SIGNAL_ORDER = [
 ]
 SIGNAL_COLORS = {
     "Critical (<14d)": theme.BAD,
-    "Low (14-30d)": "#C2410C",
+    "Low (14-30d)": theme.ORANGE,
     "Below target (30-45d)": theme.WARN,
     "Adequate (45-180d)": theme.GOOD,
     "Overstock (>180d)": theme.ACCENT_2,
@@ -96,19 +96,19 @@ def _render_stock() -> None:
     ) or 0
 
     k_cols = st.columns(4)
-    for col, (title, value, sub) in zip(
+    for col, (title, value, sub, tone) in zip(
         k_cols,
         [
-            ("Stock units", theme.fmt_int(float(snap.units)), f"snapshot {latest_month}"),
-            ("Stock value", theme.fmt_egp(float(snap.value_egp)), f"closing value, {latest_month}"),
+            ("Stock units", theme.fmt_int(float(snap.units)), f"snapshot {latest_month}", "teal"),
+            ("Stock value", theme.fmt_egp(float(snap.value_egp)), f"closing value, {latest_month}", "blue"),
             ("At-risk locations", theme.fmt_pct(int(at_risk) / max(int(snap.cells), 1)),
-             f"risk \u22650.70 · {at_risk} of {int(snap.cells)} location×category cells"),
-            ("Low-stock cells", f"{int(low_cells)}", "view bucket policy (risk \u22650.60)"),
+             f"risk \u22650.70 · {at_risk} of {int(snap.cells)} location×category cells", "red"),
+            ("Low-stock cells", f"{int(low_cells)}", "view bucket policy (risk \u22650.60)", "amber"),
         ],
         strict=True,
     ):
         with col:
-            theme.kpi_card(title, value, sub=sub)
+            theme.kpi_card(title, value, sub=sub, tone=tone)
 
     st.divider()
 
@@ -312,24 +312,28 @@ def _render_replenishment() -> None:
             sub=f"{len(below) / len(view):.1%} of filtered cells have <{TARGET_DAYS} days of cover"
             if len(view)
             else "no cells in the current filter",
+            tone="amber",
         )
     with cards[1]:
         theme.kpi_card(
             "Critical (<14 days)",
             theme.fmt_int(float(len(critical))),
             sub="reorder now · lowest cover in the snapshot",
+            tone="red",
         )
     with cards[2]:
         theme.kpi_card(
             "Suggested reorder units",
             theme.fmt_int(float(below.reorder_units.sum())),
             sub=f"to reach {TARGET_DAYS} days of cover · {len(below):,} cells",
+            tone="teal",
         )
     with cards[3]:
         theme.kpi_card(
             "Overstock value",
             theme.fmt_egp(float(overstock.closing_stock_value.sum())),
             sub=f"{len(overstock):,} overstock cells · no auto-reorder",
+            tone="rose",
         )
 
     st.divider()
