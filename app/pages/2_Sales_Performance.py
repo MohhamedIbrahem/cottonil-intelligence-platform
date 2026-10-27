@@ -17,7 +17,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import data, theme
+from app import data, global_filters, theme
 from app.filters import (
     DATA_END,
     delta_label,
@@ -36,6 +36,12 @@ categories = data.q(
 category = st.sidebar.selectbox("Category", [_all_cats, *categories], index=0)
 cat_where = "" if category == _all_cats else " AND category_en = ?"
 
+# Global cross-filters (App Shell v3) apply UNDER the category scope:
+# fragment order is period -> global filters -> category, and the params
+# everywhere below follow the same order.
+_gf_where, _gf_params = global_filters.sales_where({"governorate", "channel", "branch"})
+cat_where = _gf_where + cat_where
+
 theme.page_header(
     "Sales Performance",
     f"Reporting period: **{label}** · category scope: **{category}** · "
@@ -43,8 +49,9 @@ theme.page_header(
     eyebrow="Commercial performance",
     badges=('Category scoped',),
 )
+global_filters.render_filter_bar({"governorate", "channel", "branch"})
 
-params = (start, end) if category == _all_cats else (start, end, category)
+params = (start, end) + _gf_params + (() if category == _all_cats else (category,))
 
 # --------------------------------------------------------- headline (T052) --
 def _sales_kpis(window: tuple) -> pd.Series:  # type: ignore[type-arg]
@@ -54,7 +61,7 @@ def _sales_kpis(window: tuple) -> pd.Series:  # type: ignore[type-arg]
         "COUNT(DISTINCT sales_order_id) AS orders FROM views.sales_enriched "
         "WHERE order_date BETWEEN ? AND ?"
     )
-    return data.q(base + cat_where, (s, e) + ((category,) if category != _all_cats else ())).iloc[0]
+    return data.q(base + cat_where, (s, e) + _gf_params + ((category,) if category != _all_cats else ())).iloc[0]
 
 
 cur = _sales_kpis((start, end))
@@ -153,20 +160,20 @@ if category == _all_cats:
     cat_mix = data.q(
         """
         SELECT COALESCE(category_en, 'Unknown') AS name, SUM(net_sales) AS net
-        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?
+        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where}
         GROUP BY 1 ORDER BY 2 DESC
         """,
-        (start, end),
+        (start, end) + _gf_params,
     )
     donut_title, donut_src = "Category mix (net)", cat_mix
 else:
     aud_mix = data.q(
         """
         SELECT COALESCE(audience, 'Unspecified') AS name, SUM(net_sales) AS net
-        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ? AND category_en = ?
+        FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where} AND category_en = ?
         GROUP BY 1 ORDER BY 2 DESC
         """,
-        (start, end, category),
+        (start, end) + _gf_params + (category,),
     )
     donut_title, donut_src = f"Audience mix — {category}", aud_mix
 

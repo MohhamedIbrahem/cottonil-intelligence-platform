@@ -12,6 +12,7 @@ from __future__ import annotations
 import html
 import re
 from collections.abc import Sequence
+from contextlib import contextmanager as _contextmanager
 
 import streamlit as st
 
@@ -782,6 +783,41 @@ select:focus-visible {{
         transition-duration: 0.01ms !important;
     }}
 }}
+
+/* ------------------------------------------------------------- top bar -- */
+.st-key-topbar {{
+    background: {NAVY};
+    border-radius: 14px;
+    padding: 0.45rem 0.9rem;
+    margin-bottom: 0.9rem;
+    position: sticky;
+    top: 0.5rem;
+    z-index: 999;
+    box-shadow: 0 6px 20px rgba(23,54,93,0.18);
+}}
+.st-key-topbar .topbar-brand {{ color: #FFFFFF; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; }}
+.st-key-topbar .topbar-crumb {{ color: #CFDDF2; font-size: 0.82rem; white-space: nowrap; }}
+.st-key-topbar .topbar-chip {{
+    background: rgba(255,255,255,0.13); color: #FFFFFF; border-radius: 999px;
+    padding: 0.28rem 0.7rem; font-size: 0.78rem; font-weight: 600; white-space: nowrap;
+    display: inline-block; margin-top: 0.35rem;
+}}
+@media (max-width: 900px) {{
+    .st-key-topbar .topbar-crumb {{ display: none; }}
+}}
+
+/* ------------------------------------------------------- insight strip -- */
+.cottonil-insight {{
+    border: 1px solid {BORDER}; border-radius: 14px; padding: 12px 14px; height: 100%;
+}}
+.cottonil-insight .ins-label {{ font-size: 0.72rem; letter-spacing: 0.07em; text-transform: uppercase; font-weight: 700; color: {TEXT_MUTED}; }}
+.cottonil-insight .ins-value {{ font-size: 1.25rem; font-weight: 800; color: {TEXT}; line-height: 1.2; }}
+.cottonil-insight .ins-sub {{ font-size: 0.78rem; color: {TEXT_MUTED}; line-height: 1.45; }}
+.cottonil-insight.tone-good {{ background: {GOOD_SOFT}; }}
+.cottonil-insight.tone-bad {{ background: {BAD_SOFT}; }}
+.cottonil-insight.tone-warn {{ background: {WARN_SOFT}; }}
+.cottonil-insight.tone-neutral {{ background: {CARD}; }}
+
 </style>
 """
 
@@ -824,6 +860,110 @@ def apply_theme() -> None:
         "</div>",
         unsafe_allow_html=True,
     )
+
+
+# ------------------------------------------------------------ top bar -----
+def topbar(
+    *,
+    group: str,
+    title: str,
+    period_label: str,
+    data_through: str,
+    jump_options: list[tuple[str, str]],
+    current_key: str,
+) -> str | None:
+    """Sticky shell top bar: brand + breadcrumb, quick jump, status chips.
+
+    Rendered by the shell (Home.py) before the page runs. Returns the page
+    key chosen in the "Jump to" selectbox when it differs from
+    `current_key` (the caller then switches pages), else None. The widget
+    key embeds the current page so the selection always reflects where
+    the user actually is, even after sidebar navigation.
+    """
+    titles = [title_ for _, title_ in jump_options]
+    keys = [key for key, _ in jump_options]
+    current_title = dict(jump_options).get(current_key, title)
+    with st.container(key="topbar"):
+        c_brand, c_jump, c_period, c_data = st.columns([2.2, 1.5, 1.3, 1.3])
+        with c_brand:
+            st.markdown(
+                '<div class="topbar-brand">COTTONIL <span style="font-weight:500;opacity:.75">Intelligence</span></div>'
+                f'<div class="topbar-crumb">{_inline(group)} / {_inline(title)}</div>',
+                unsafe_allow_html=True,
+            )
+        with c_jump:
+            chosen = st.selectbox(
+                "Jump to",
+                titles,
+                index=titles.index(current_title) if current_title in titles else 0,
+                key=f"topbar_jump_{current_key}",
+                label_visibility="collapsed",
+            )
+        with c_period:
+            st.markdown(f'<span class="topbar-chip">{_inline(period_label)}</span>', unsafe_allow_html=True)
+        with c_data:
+            st.markdown(f'<span class="topbar-chip">Data through {_inline(data_through)} \u00b7 Live</span>', unsafe_allow_html=True)
+    chosen_key = keys[titles.index(chosen)] if chosen in titles else current_key
+    return chosen_key if chosen_key != current_key else None
+
+
+# -------------------------------------------------------- insight strip ---
+_INSIGHT_TONES = ("good", "bad", "warn", "neutral")
+
+
+def insight_strip(items: list[dict]) -> None:
+    """Up to 3 insight cards: {icon, label, value, sub, tone}.
+
+    Insights are computed by each page from dataframes it already
+    queries — this helper only renders. Tones map to the semantic
+    *_SOFT backgrounds in the palette.
+    """
+    items = [item for item in items if item][:3]
+    if not items:
+        return
+    cols = st.columns(len(items))
+    for col, item in zip(cols, items, strict=True):
+        tone = item.get("tone", "neutral")
+        if tone not in _INSIGHT_TONES:
+            tone = "neutral"
+        icon = item.get("icon", "")
+        with col:
+            st.markdown(
+                f'<div class="cottonil-insight tone-{tone}">'
+                f'<div class="ins-label">{_inline(icon + " " if icon else "")}{_inline(str(item.get("label", "")))}</div>'
+                f'<div class="ins-value">{_inline(str(item.get("value", "")))}</div>'
+                f'<div class="ins-sub">{_inline(str(item.get("sub", "")))}</div>'
+                "</div>",
+                unsafe_allow_html=True,
+            )
+
+
+# ------------------------------------------------------------- cards ------
+
+
+@_contextmanager
+def chart_card(title: str, subtitle: str | None = None):
+    """Titled card wrapper for a chart.
+
+    Charts already receive card chrome from the global CSS
+    ([data-testid="stPlotlyChart"]); this wrapper adds the shared
+    title/subtitle header above the figure inside a bordered card.
+    """
+    with st.container(border=True):
+        st.markdown(f"**{title}**")
+        if subtitle:
+            st.caption(subtitle)
+        yield
+
+
+@_contextmanager
+def table_card(title: str, subtitle: str | None = None):
+    """Titled card wrapper for a dataframe (same chrome as chart_card)."""
+    with st.container(border=True):
+        st.markdown(f"**{title}**")
+        if subtitle:
+            st.caption(subtitle)
+        yield
 
 
 def page_header(

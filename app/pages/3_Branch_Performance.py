@@ -18,7 +18,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import data, theme
+from app import data, global_filters, theme
 from app.filters import (
     DATA_END,
     previous_period,
@@ -27,6 +27,11 @@ from app.filters import (
 )
 
 start, end, label, mode = selected_period()
+
+# Global cross-filters (App Shell v3): channel + branch scope this page;
+# governorate stays unfiltered so the governorate share/growth charts
+# always compare the full set.
+_gf_where, _gf_params = global_filters.sales_where({"channel", "branch"})
 prev_window = previous_period(start, end, mode)
 
 
@@ -42,10 +47,10 @@ def _branch_agg(window: tuple) -> pd.DataFrame:
                COUNT(DISTINCT sales_order_id)     AS orders,
                COUNT(DISTINCT customer_id)        AS customers
         FROM views.sales_enriched
-        WHERE order_date BETWEEN ? AND ?
+        WHERE order_date BETWEEN ? AND ?{_gf_where}
         GROUP BY branch_id
         """,
-        (s, e),
+        (s, e) + _gf_params,
     )
     frame["aov"] = frame.net / frame.orders.where(frame.orders > 0, np.nan)
     return frame
@@ -73,6 +78,7 @@ theme.page_header(
     eyebrow="Commercial performance",
     badges=('Store league table',),
 )
+global_filters.render_filter_bar({"channel", "branch"})
 
 prev_label = window_label(prev_window, empty="no window")
 
@@ -180,9 +186,9 @@ with sc_col:
 guest_orders = data.scalar(
     """
     SELECT COUNT(DISTINCT sales_order_id) FROM views.sales_enriched
-    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?
+    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?{_gf_where}
     """,
-    (start, end),
+    (start, end) + _gf_params,
 ) or 0
 
 with st.expander("Data notes - definitions & caveats for this page", expanded=False):

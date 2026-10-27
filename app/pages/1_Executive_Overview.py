@@ -19,7 +19,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from app import data, theme
+from app import data, global_filters, theme
 from app.filters import (
     DATA_END,
     delta_label,
@@ -31,6 +31,12 @@ from app.filters import (
 start, end, label, mode = selected_period()
 prev_window = previous_period(start, end, mode)
 
+# Global cross-filters (App Shell v3): board view only — the all-time
+# "Company at a glance" strip above stays unfiltered by design.
+_GF_SUPPORTED = {"governorate", "channel", "branch"}
+_gf_where, _gf_params = global_filters.sales_where(_GF_SUPPORTED)
+_gf_where_le, _gf_params_le = global_filters.sales_where(_GF_SUPPORTED, alias="le")
+
 theme.page_header(
     "Executive Overview",
     f"Reporting period: **{label}** · figures include guest checkout (audit A4) "
@@ -38,6 +44,7 @@ theme.page_header(
     eyebrow="Core performance",
     badges=('Board view',),
 )
+global_filters.render_filter_bar(_GF_SUPPORTED)
 
 # ------------------------------------ company at a glance (folded from Home) --
 theme.section_header(
@@ -100,18 +107,18 @@ def _kpi_row(window: tuple) -> pd.Series:  # type: ignore[type-arg]
                COUNT(DISTINCT sales_order_id) AS orders,
                COUNT(DISTINCT customer_id) AS customers
         FROM views.sales_enriched
-        WHERE order_date BETWEEN ? AND ?
+        WHERE order_date BETWEEN ? AND ?{_gf_where}
         """,
-        (s, e),
+        (s, e) + _gf_params,
     ).iloc[0]
     returned = data.scalar(
         """
         SELECT COUNT(DISTINCT le.sales_order_id)
         FROM views.returns_enriched r
         JOIN views.sales_enriched le ON le.sales_order_id = r.sales_order_id
-        WHERE le.order_date BETWEEN ? AND ?
+        WHERE le.order_date BETWEEN ? AND ?{_gf_where_le}
         """,
-        (s, e),
+        (s, e) + _gf_params_le,
     )
     net["returned_orders"] = int(returned or 0)
     return net
@@ -151,6 +158,29 @@ for col, (title, value, delta, sub, tone) in zip(cols, kpi_cards, strict=True):
     with col:
         theme.kpi_card(title, value, delta=delta[0], delta_up=delta[1], delta_good=delta[2], sub=sub, tone=tone)
 
+# Insights-first strip (App Shell v3): three deterministic callouts from
+# the KPI rows already computed above — no new queries, no models.
+theme.insight_strip([
+    {
+        "icon": "\U0001F4C8", "label": "Revenue momentum",
+        "value": kpi_cards[0][2][0].split(" vs ")[0] + " net sales",
+        "sub": f"Net sales {kpi_cards[0][2][0]}",
+        "tone": "good" if kpi_cards[0][2][2] else "bad",
+    },
+    {
+        "icon": "\u26A0\uFE0F", "label": "Returns watch",
+        "value": theme.fmt_pct(rate_cur) + " return rate",
+        "sub": f"Return rate {rate_delta[0]} — lower is better",
+        "tone": "good" if rate_delta[2] else "warn",
+    },
+    {
+        "icon": "\U0001F465", "label": "Customer momentum",
+        "value": kpi_cards[3][2][0].split(" vs ")[0] + " active customers",
+        "sub": f"Active customers {kpi_cards[3][2][0]}",
+        "tone": "good" if kpi_cards[3][2][2] else "bad",
+    },
+])
+
 st.divider()
 
 # ------------------------------------------------------- monthly trend (T041) --
@@ -158,10 +188,10 @@ trend = data.q(
     """
     SELECT ym, SUM(net_sales) AS net, SUM(gross_profit) AS gross_profit
     FROM views.sales_enriched
-    WHERE order_date BETWEEN ? AND ?
+    WHERE order_date BETWEEN ? AND ?{_gf_where}
     GROUP BY ym ORDER BY ym
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 trend["month"] = pd.to_datetime(trend.ym + "-01")
 
@@ -188,10 +218,10 @@ branches = data.q(
     SELECT branch_name_ar, branch_governorate_ar AS governorate,
            SUM(net_sales) AS net, COUNT(DISTINCT sales_order_id) AS orders
     FROM views.sales_enriched
-    WHERE order_date BETWEEN ? AND ?
+    WHERE order_date BETWEEN ? AND ?{_gf_where}
     GROUP BY 1, 2 ORDER BY net DESC
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 top5 = branches.head(5).copy()
 top5["label"] = [f"{n} · {g}" for n, g in zip(top5.branch_name_ar, top5.governorate, strict=True)]
@@ -234,18 +264,18 @@ with g_col:
 cat = data.q(
     """
     SELECT category_en AS category, SUM(net_sales) AS net
-    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?
+    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where}
     GROUP BY 1 ORDER BY 2 DESC
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 chan = data.q(
     """
     SELECT sales_channel AS channel, SUM(net_sales) AS net
-    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?
+    FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?{_gf_where}
     GROUP BY 1 ORDER BY 2 DESC
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 
 c_col, ch_col = st.columns(2)
@@ -272,15 +302,15 @@ with ch_col:
 
 # ------------------------------------------------------- data notes (T044) --
 lines_in_window = data.scalar(
-    "SELECT COUNT(*) FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?",
-    (start, end),
+    "SELECT COUNT(*) FROM views.sales_enriched WHERE order_date BETWEEN ? AND ?" + _gf_where,
+    (start, end) + _gf_params,
 )
 guest_orders = data.scalar(
     """
     SELECT COUNT(DISTINCT sales_order_id) FROM views.sales_enriched
-    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?
+    WHERE customer_id IS NULL AND order_date BETWEEN ? AND ?{_gf_where}
     """,
-    (start, end),
+    (start, end) + _gf_params,
 )
 
 with st.expander("Data notes - definitions & caveats for this page", expanded=False):

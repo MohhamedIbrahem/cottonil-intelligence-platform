@@ -55,7 +55,8 @@ _MSGS_KEY = "assistant_msgs"          # preserved session key (§7.5)
 _PENDING_KEY = "assistant_pending"    # preserved session key (§7.5)
 _READY_KEY = "assistant_llm_ready"    # preserved session key (§7.5)
 
-_INPUT_KEY = "assistant_input"        # composer text field (inside the form)
+_INPUT_KEY = "assistant_input"
+_PAGE_CTX_KEY = "assistant_page_ctx"   # registry key of the page the shell is showing        # composer text field (inside the form)
 _SEQ_KEY = "assistant_seq"            # monotonically increasing request ids
 _LAST_REQUEST_KEY = "assistant_last_request"   # id of the request now queued
 _PROCESSING_KEY = "assistant_processing"       # True while engine.ask() runs
@@ -92,6 +93,27 @@ _STYLE = f"""
     color: {theme.TEXT_MUTED};
     font-size: 0.76rem;
     margin-left: 6px;
+}}
+/* ---- alert badge on the FAB (App Shell v3) ---- */
+.assistant-badge {{
+    position: fixed;
+    right: 16px;
+    bottom: 74px;
+    z-index: 100001;
+    background: {theme.BAD};
+    color: #FFFFFF;
+    border: 2px solid #FFFFFF;
+    border-radius: 999px;
+    min-width: 24px;
+    height: 24px;
+    padding: 0 6px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(23,54,93,0.25);
 }}
 /* ---- floating action button (closed dock) ---- */
 .st-key-assistant-dock {{
@@ -346,6 +368,130 @@ def _queue_submit() -> None:
     state[_PENDING_KEY] = text
 
 
+
+# ------------------------------------------------- suggestions (v3) -----
+GLOBAL_SUGGESTIONS: list[tuple[str, str]] = [
+    ("Get insights",
+     "Give me an executive digest of the whole dataset: total net sales, orders, "
+     "active customers, average order value, and the best-selling three categories."),
+    ("Last month report",
+     "Write a short report for the last complete month (September 2026): net sales, "
+     "orders, active customers, top-3 branches, and anything notable about returns."),
+    ("Check inventory",
+     "Which locations and categories have the highest stockout risk right now "
+     "(latest stock month)? Show the top 10 with their closing units and value."),
+    ("At-risk customers",
+     "Which customers are at risk of churn? Show the top 10 with their RFM tier, "
+     "orders and lifetime value."),
+    ("Top branches",
+     "Show the top 5 branches by net sales for the last 12 months with their "
+     "orders and average order value."),
+    ("Top suppliers",
+     "List the top 10 suppliers by number of purchase orders with their total PO "
+     "value, average lead time in days, and on-time delivery percentage."),
+]
+
+PAGE_SUGGESTIONS: dict[str, list[tuple[str, str]]] = {
+    "inventory_stock": [
+        ("Stockout risk",
+         "Which locations and categories have the highest stockout risk right now "
+         "(latest stock month)? Show the top 10 with their closing units and value."),
+        ("Reorder first",
+         "What are the top 10 replenishment priorities in the latest stock "
+         "snapshot, and what action does each one need?"),
+        ("Overstock value",
+         "Which categories carry the most overstock value in the latest stock month?"),
+    ],
+    "sales_performance": [
+        ("Sales digest",
+         "Give me a digest of sales performance for the last 12 months: net sales, "
+         "orders, average order value, and the best-selling categories."),
+        ("Top products",
+         "Which are the top 10 products by net sales in the last 12 months?"),
+        ("Channel mix",
+         "How do sales channels compare by net sales in the last 12 months?"),
+    ],
+    "branch_performance": [
+        ("Fastest growth",
+         "Which branches grew fastest year over year in the last 12 months?"),
+        ("Top 5 branches",
+         "Show the top 5 branches by net sales for the last 12 months with their "
+         "orders and average order value."),
+        ("Governorate share",
+         "Which governorates contribute the most net sales in the last 12 months?"),
+    ],
+    "customer_intelligence": [
+        ("Churn risk",
+         "Which customers are at risk of churn? Show the top 10 with their RFM tier, "
+         "orders and lifetime value."),
+        ("Top customers",
+         "Who are the top 10 customers by lifetime value?"),
+        ("RFM mix",
+         "How are customers distributed across RFM tiers?"),
+    ],
+    "executive_overview": GLOBAL_SUGGESTIONS[:3],
+}
+
+
+def ask(question: str) -> None:
+    """Public queue helper (App Shell v3): queue one question + open the dock.
+
+    Uses the exact idempotency contract of `_queue_submit` — this is a
+    button on_click callback, so it runs before the script body, writes
+    `assistant_pending` at most once per real click, bumps the request
+    sequence, and never queues while a request is processing or when the
+    identical question is already pending.
+    """
+    state = st.session_state
+    _ensure_state()
+    text = (question or "").strip()
+    if not text or state.get(_PROCESSING_KEY):
+        return
+    if state.get(_PENDING_KEY) == text:
+        state[_OPEN_KEY] = True
+        return
+    state[_SEQ_KEY] = state.get(_SEQ_KEY, 0) + 1
+    state[_LAST_REQUEST_KEY] = state[_SEQ_KEY]
+    state[_PENDING_KEY] = text
+    state[_OPEN_KEY] = True
+
+
+def _alert_count() -> int:
+    """Stockout-risk cells in the latest snapshot (Inventory KPI definition).
+
+    Goes through app.data.q (cached, ttl 600) so it costs nothing per
+    rerun; any failure (DB missing, view absent) hides the badge.
+    """
+    try:
+        from app import data
+
+        value = data.scalar(
+            "SELECT COUNT(*) FROM views.stock_latest WHERE stockout_risk_score >= 0.70"
+        )
+        return int(value or 0)
+    except Exception:  # noqa: BLE001 - badge is cosmetic, never fatal
+        return 0
+
+
+def _render_suggestions() -> None:
+    """Page-aware suggestion chips above the composer (App Shell v3)."""
+    page_key = st.session_state.get(_PAGE_CTX_KEY)
+    contextual = PAGE_SUGGESTIONS.get(page_key or "", [])
+    if contextual:
+        st.caption("Suggested for this page")
+        cols = st.columns(len(contextual))
+        for col, (label, question) in zip(cols, contextual, strict=True):
+            with col:
+                st.button(label, key=f"assistant-sugg-{page_key}-{label}",
+                          on_click=ask, args=(question,), width="stretch")
+    with st.expander("All suggestions", expanded=False):
+        cols = st.columns(3)
+        for index, (label, question) in enumerate(GLOBAL_SUGGESTIONS):
+            with cols[index % 3]:
+                st.button(label, key=f"assistant-sugg-global-{label}",
+                          on_click=ask, args=(question,), width="stretch")
+
+
 def _render_history() -> None:
     messages = st.session_state[_MSGS_KEY]
     if not messages:
@@ -479,6 +625,7 @@ def _render_panel() -> None:
         _render_history()
     st.container(height=6, border=False)
     if ready:
+        _render_suggestions()
         _render_composer()
 
 
@@ -494,9 +641,15 @@ def _render_fab() -> None:
     )
 
 
-def render_assistant_bubble() -> None:
-    """Draw the dock once; the shell calls it before the current page runs."""
+def render_assistant_bubble(current_key: str | None = None) -> None:
+    """Draw the dock once; the shell calls it before the current page runs.
+
+    `current_key` is the navigation registry key of the page being shown;
+    it drives the page-aware suggestion chips (App Shell v3).
+    """
     _ensure_state()
+    if current_key:
+        st.session_state[_PAGE_CTX_KEY] = current_key
     st.html(_STYLE)
     # Queue processing happens regardless of panel state so a pending
     # question (e.g. queued, then navigation rerun) is never lost.
@@ -507,3 +660,6 @@ def render_assistant_bubble() -> None:
     else:
         with st.container(border=False, key="assistant-dock"):
             _render_fab()
+        count = _alert_count()
+        if count:
+            st.html(f'<div class="assistant-badge">{count}</div>')

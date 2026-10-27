@@ -110,6 +110,35 @@ def _render_stock() -> None:
         with col:
             theme.kpi_card(title, value, sub=sub, tone=tone)
 
+    # Insights-first strip (App Shell v3): from the snapshot KPIs above
+    # plus the single highest-risk cell — one extra scalar-grade query.
+    _top_risk = data.q(
+        "SELECT location_label, product_category, stockout_risk_score "
+        "FROM views.stock_latest ORDER BY stockout_risk_score DESC LIMIT 1"
+    )
+    theme.insight_strip([
+        {
+            "icon": "\u26A0\uFE0F", "label": "Stockout risk",
+            "value": f"{int(at_risk)} at-risk cells",
+            "sub": f"risk \u22650.70 · {theme.fmt_pct(int(at_risk) / max(int(snap.cells), 1))} of the latest snapshot",
+            "tone": "bad" if int(at_risk) else "good",
+        },
+        {
+            "icon": "\U0001F4E6", "label": "Low stock",
+            "value": f"{int(low_cells)} low-stock cells",
+            "sub": "view bucket policy (risk \u22650.60)",
+            "tone": "warn" if int(low_cells) else "good",
+        },
+        {
+            "icon": "\U0001F4CD", "label": "Highest-risk cell",
+            "value": (f"{_top_risk.iloc[0].location_label} · {_top_risk.iloc[0].product_category}"
+                      if len(_top_risk) else "—"),
+            "sub": (f"stockout risk {float(_top_risk.iloc[0].stockout_risk_score):.2f} in {latest_month}"
+                    if len(_top_risk) else "no snapshot rows"),
+            "tone": "bad" if len(_top_risk) and float(_top_risk.iloc[0].stockout_risk_score) >= 0.70 else "neutral",
+        },
+    ])
+
     st.divider()
 
     # ------------------------------------------------------------ trend (T071) --
