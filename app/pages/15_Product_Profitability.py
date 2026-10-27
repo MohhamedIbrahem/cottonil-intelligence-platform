@@ -17,16 +17,9 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, render_period_selector
+from app.filters import DATA_END, selected_period
 
-st.set_page_config(
-    page_title="Product Profitability · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, _ = render_period_selector()
+start, end, label, _ = selected_period()
 ym_start, ym_end = start.strftime("%Y-%m"), end.strftime("%Y-%m")
 
 LOW_MARGIN = 0.30
@@ -127,24 +120,28 @@ with cards[0]:
         "Net sales",
         theme.fmt_egp(net_sales),
         sub=f"{theme.fmt_int(float(period.units or 0))} units · {int(period.sku_months):,} SKU-months",
+        tone="blue",
     )
 with cards[1]:
     theme.kpi_card(
         "Gross profit",
         theme.fmt_egp(gross_profit),
         sub="recorded unit cost · excludes operating expenses",
+        tone="green",
     )
 with cards[2]:
     theme.kpi_card(
         "Gross margin",
         f"{margin:.1%}",
         sub="weighted across all SKU-months in the window",
+        tone="teal",
     )
 with cards[3]:
     theme.kpi_card(
         "Low-margin net exposure",
         f"{low_margin_share:.1%}",
         sub=f"{low_row_share:.1%} of SKU-months sit below {LOW_MARGIN:.0%}",
+        tone="red",
     )
 
 st.divider()

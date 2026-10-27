@@ -23,18 +23,11 @@ from app.filters import (
     DATA_END,
     delta_label,
     previous_period,
-    render_period_selector,
+    selected_period,
     window_label,
 )
 
-st.set_page_config(
-    page_title="Wholesale & Distributors · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, mode = render_period_selector()
+start, end, label, mode = selected_period()
 prev_window = previous_period(start, end, mode)
 prev_label = window_label(prev_window, empty="no comparison window")
 _delta = partial(delta_label, label=prev_label)
@@ -44,10 +37,10 @@ def _prior(prior: dict | None, key: str):
     return None if prior is None else prior[key]
 
 
-def _card(col, title: str, value: str, delta: tuple, sub: str) -> None:
+def _card(col, title: str, value: str, delta: tuple, sub: str, tone: str | None = None) -> None:
     text, up, good = delta
     with col:
-        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub)
+        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub, tone=tone)
 
 
 # ------------------------------------------------------------ wholesale KPIs --
@@ -128,22 +121,22 @@ cards = st.columns(4)
 _card(
     cards[0], "Wholesale channel net", theme.fmt_egp(cur["net"]),
     _delta(cur["net"], _prior(pri, "net")),
-    f"{cur['share']:.1%} of company net · {cur['customers']:,} buyers",
+    f"{cur['share']:.1%} of company net · {cur['customers']:,} buyers", "blue",
 )
 _card(
     cards[1], "Wholesale orders", theme.fmt_int(cur["orders"]),
     _delta(cur["orders"], _prior(pri, "orders")),
-    f"AOV EGP {cur['aov']:,.0f} · wholesale channel",
+    f"AOV EGP {cur['aov']:,.0f} · wholesale channel", "teal",
 )
 _card(
     cards[2], "B2B reseller net", theme.fmt_egp(cur["b2b_net"]),
     _delta(cur["b2b_net"], _prior(pri, "b2b_net")),
-    f"all channels · {cur['b2b_share']:.1%} of company net · margin {cur['b2b_margin']:.1%}",
+    f"all channels · {cur['b2b_share']:.1%} of company net · margin {cur['b2b_margin']:.1%}", "violet",
 )
 _card(
     cards[3], "Active B2B accounts", theme.fmt_int(cur["b2b_customers"]),
     _delta(cur["b2b_customers"], _prior(pri, "b2b_customers")),
-    f"{cur['new_accounts']:,} placed their first order in this window",
+    f"{cur['new_accounts']:,} placed their first order in this window", "rose",
 )
 
 st.divider()
@@ -269,7 +262,7 @@ cat_fig = go.Figure(go.Pie(
     labels=categories.category_en,
     values=categories.net,
     hole=0.55,
-    marker={"colors": theme.COLORS + ["#94A3B8", "#64748B"]},
+    marker={"colors": theme.COLORS + [theme.NEUTRAL, theme.TEXT_MUTED]},
     textinfo="percent",
     customdata=categories.units,
     hovertemplate="%{label}<br>Net EGP %{value:,.0f}<br>%{customdata:,} units<extra></extra>",

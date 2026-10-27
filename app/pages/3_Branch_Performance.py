@@ -22,18 +22,11 @@ from app import data, theme
 from app.filters import (
     DATA_END,
     previous_period,
-    render_period_selector,
+    selected_period,
     window_label,
 )
 
-st.set_page_config(
-    page_title="Branch Performance · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, mode = render_period_selector()
+start, end, label, mode = selected_period()
 prev_window = previous_period(start, end, mode)
 
 
@@ -90,18 +83,18 @@ k_aov = k_net / max(k_orders, 1)
 k_active = int((cur_b.net > 0).sum())
 
 cards = st.columns(4)
-for col, (title, value, sub) in zip(
+for col, (title, value, sub, tone) in zip(
     cards,
     [
-        ("Net sales", theme.fmt_egp(k_net), f"vs {prev_label}" if prev_window else "all-time window"),
-        ("Active branches", str(k_active), f"of {len(cur_b)} with sales in window"),
-        ("Avg branch net", theme.fmt_egp(k_net / max(k_active, 1)), "mean net of active branches"),
-        ("Basket (AOV)", theme.fmt_egp(k_aov), "network-wide, guests included"),
+        ("Net sales", theme.fmt_egp(k_net), f"vs {prev_label}" if prev_window else "all-time window", "blue"),
+        ("Active branches", str(k_active), f"of {len(cur_b)} with sales in window", "teal"),
+        ("Avg branch net", theme.fmt_egp(k_net / max(k_active, 1)), "mean net of active branches", "violet"),
+        ("Basket (AOV)", theme.fmt_egp(k_aov), "network-wide, guests included", "amber"),
     ],
     strict=True,
 ):
     with col:
-        theme.kpi_card(title, value, sub=sub)
+        theme.kpi_card(title, value, sub=sub, tone=tone)
 
 st.divider()
 
@@ -143,7 +136,7 @@ gov_col, sc_col = st.columns([1, 1])
 gov_fig = go.Figure(go.Bar(
     x=gov_c.share, y=gov_c.governorate, orientation="h",
     marker={"color": gov_c.growth.fillna(0),
-            "colorscale": [[0.0, theme.BAD], [0.5, "#3A4E7A"], [1.0, theme.GOOD]],
+            "colorscale": [[0.0, theme.BAD], [0.5, theme.NEUTRAL], [1.0, theme.GOOD]],
             "cmin": -0.3, "cmax": 0.3, "showscale": False},
     text=[theme.fmt_pct(s) + (f" ({g:+.0%})" if pd.notna(g) else "")
           for s, g in zip(gov_c.share, gov_c.growth, strict=True)],
@@ -167,7 +160,7 @@ sc_fig = go.Figure(go.Scatter(
         "size": np.sqrt(sc.orders) * 3.0 + 6.0,
         "color": [theme.GOOD if g >= 0 else theme.BAD for g in sc.growth],
         "opacity": 0.8,
-        "line": {"color": theme.TEXT_ON_COLOR, "width": 0.5},
+        "line": {"color": theme.TEXT, "width": 0.5},
     },
     customdata=np.stack([sc.branch, sc.governorate, sc.growth], axis=-1),
     hovertemplate="%{customdata[0]} (%{customdata[1]})<br>"

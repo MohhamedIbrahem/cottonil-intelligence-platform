@@ -18,16 +18,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, render_period_selector
-
-st.set_page_config(
-    page_title="Store Expansion · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-render_period_selector()  # shared control; this is an all-time coverage profile
+from app.filters import DATA_END  # sidebar period does not scope this page
 
 gap = data.q(
     """
@@ -74,24 +65,28 @@ with cards[0]:
         "Governorates with a branch",
         f"{len(gap)} / {len(gap)}",
         sub="no greenfield whitespace · one branch minimum",
+        tone="teal",
     )
 with cards[1]:
     theme.kpi_card(
         "Branches",
         theme.fmt_int(total_branches),
         sub=f"{retail_branches} retail · {reseller_pos_branches} POS/reseller",
+        tone="blue",
     )
 with cards[2]:
     theme.kpi_card(
         "Resident buyers per branch",
         theme.fmt_int(national_buyers_per_branch),
         sub=f"{theme.fmt_int(total_buyers)} buyers ÷ {total_branches} branches · range 168–3,530",
+        tone="violet",
     )
 with cards[3]:
     theme.kpi_card(
         "Branch POS per branch",
         theme.fmt_egp(pos_per_branch),
         sub="Retail POS only · range EGP 5.06M–5.28M · nearly uniform",
+        tone="rose",
     )
 
 st.divider()

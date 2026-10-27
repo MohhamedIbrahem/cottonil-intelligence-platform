@@ -18,16 +18,9 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import analytics, data, theme
-from app.filters import DATA_END, render_period_selector
+from app.filters import DATA_END, selected_period
 
-st.set_page_config(
-    page_title="Demand Forecast · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, _ = render_period_selector()
+start, end, label, _ = selected_period()
 
 ALL_CATEGORIES = "All categories"
 MEASURES = {
@@ -88,6 +81,7 @@ with cards[0]:
         f"Last complete month · {last['ym']}",
         formatter(float(last["actual"])),
         sub="actual demand · October 2026 is partial and excluded",
+        tone="teal",
     )
 with cards[1]:
     theme.kpi_card(
@@ -97,6 +91,7 @@ with cards[1]:
         delta_up=forecast_growth >= 0,
         delta_good=forecast_growth >= 0,
         sub=f"{forecast['ym'].iloc[0]} – {forecast['ym'].iloc[-1]} · sum of monthly forecast",
+        tone="blue",
     )
 with cards[2]:
     theme.kpi_card(
@@ -106,12 +101,14 @@ with cards[2]:
             f"mean {metrics['wape_mean']:.1%} across "
             f"{metrics['backtest_windows']} rolling origins · lower is better"
         ),
+        tone="amber",
     )
 with cards[3]:
     theme.kpi_card(
         "Model",
         "Holt-Winters",
         sub=f"additive damped trend · multiplicative season · ±{band_pct:.1%} planning band",
+        tone="violet",
     )
 
 st.divider()
@@ -157,7 +154,7 @@ fig.add_trace(
         y=forecast["lo"],
         mode="lines",
         fill="tonexty",
-        fillcolor="rgba(31,111,235,0.16)",
+        fillcolor=theme.ACCENT_SOFT,
         line={"width": 0},
         name=f"Planning band (±{band_pct:.1%})",
         hoverinfo="skip",

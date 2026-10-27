@@ -23,18 +23,11 @@ from app.filters import (
     DATA_END,
     delta_label,
     previous_period,
-    render_period_selector,
+    selected_period,
     window_label,
 )
 
-st.set_page_config(
-    page_title="Supply Chain & Logistics · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, mode = render_period_selector()
+start, end, label, mode = selected_period()
 prev_window = previous_period(start, end, mode)
 prev_label = window_label(prev_window, empty="no comparison window")
 _delta = partial(delta_label, label=prev_label)
@@ -55,10 +48,10 @@ def _prior(prior: dict | None, key: str):
     return None if prior is None else prior[key]
 
 
-def _card(col, title: str, value: str, delta: tuple, sub: str) -> None:
+def _card(col, title: str, value: str, delta: tuple, sub: str, tone: str | None = None) -> None:
     text, up, good = delta
     with col:
-        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub)
+        theme.kpi_card(title, value, delta=text, delta_up=up, delta_good=good, sub=sub, tone=tone)
 
 
 # ------------------------------------------------------------ delivery KPIs --
@@ -130,22 +123,22 @@ cards = st.columns(4)
 _card(
     cards[0], "Shipments", theme.fmt_int(cur_d["shipments"]),
     _delta(cur_d["shipments"], _prior(pri_d, "shipments")),
-    "E-commerce orders in period",
+    "E-commerce orders in period", "teal",
 )
 _card(
     cards[1], "Delayed rate", theme.fmt_pct(cur_d["delayed_rate"]),
     _delta(cur_d["delayed_rate"], _prior(pri_d, "delayed_rate"), lower_is_better=True),
-    f"{cur_d['delayed']:,} delayed shipments",
+    f"{cur_d['delayed']:,} delayed shipments", "red",
 )
 _card(
     cards[2], "Avg delivery days", f"{cur_d['avg_days']:.1f}",
     _delta(cur_d["avg_days"], _prior(pri_d, "avg_days"), lower_is_better=True),
-    "ship date to delivery date",
+    "ship date to delivery date", "amber",
 )
 _card(
     cards[3], "Shipping fees", theme.fmt_egp(cur_d["fee"]),
     _delta(cur_d["fee"], _prior(pri_d, "fee")),
-    "charged to customers; no carrier cost data",
+    "charged to customers; no carrier cost data", "violet",
 )
 
 st.divider()
@@ -295,21 +288,25 @@ with t_cards[0]:
     theme.kpi_card(
         "Transfers", theme.fmt_int(cur_t["transfers"]),
         sub=f"vs {theme.fmt_int(pri_t['transfers']) if pri_t else 'n/a'} in prior window",
+        tone="teal",
     )
 with t_cards[1]:
     theme.kpi_card(
         "Units moved", theme.fmt_int(cur_t["units"]),
         sub=f"{cur_t['units'] / max(cur_t['transfers'], 1):,.0f} units per transfer",
+        tone="blue",
     )
 with t_cards[2]:
     theme.kpi_card(
         "Transport cost", theme.fmt_egp(cur_t["cost"]),
         sub=f"EGP {cur_t['cost_per_unit']:,.2f} per unit moved",
+        tone="amber",
     )
 with t_cards[3]:
     theme.kpi_card(
         "Open transfers", theme.fmt_int(cur_t["open"]),
         sub=f"{cur_t['in_transit']:,} in transit · {cur_t['partial']:,} partially received",
+        tone="violet",
     )
 
 transfer_trend = data.q(
