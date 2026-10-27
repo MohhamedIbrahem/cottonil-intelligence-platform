@@ -22,18 +22,11 @@ from app.filters import (
     DATA_END,
     delta_label,
     previous_period,
-    render_period_selector,
+    selected_period,
     window_label,
 )
 
-st.set_page_config(
-    page_title="Sales Performance · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, mode = render_period_selector()
+start, end, label, mode = selected_period()
 
 # ------------------------------------------------------------ category scope --
 _all_cats = "All categories"

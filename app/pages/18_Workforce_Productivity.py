@@ -18,16 +18,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, render_period_selector
-
-st.set_page_config(
-    page_title="Workforce Productivity · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-render_period_selector()  # shared control; payroll coverage, not the window, drives this page
+from app.filters import DATA_END  # sidebar period does not scope this page
 
 REFERENCE_YEAR = "2023"
 

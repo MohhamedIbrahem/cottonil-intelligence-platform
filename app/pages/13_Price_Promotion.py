@@ -17,16 +17,9 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import analytics, data, theme
-from app.filters import DATA_END, render_period_selector
+from app.filters import DATA_END, selected_period
 
-st.set_page_config(
-    page_title="Price & Promotion · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, _ = render_period_selector()
+start, end, label, _ = selected_period()
 ym_start, ym_end = start.strftime("%Y-%m"), end.strftime("%Y-%m")
 
 

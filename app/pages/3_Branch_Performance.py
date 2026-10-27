@@ -22,18 +22,11 @@ from app import data, theme
 from app.filters import (
     DATA_END,
     previous_period,
-    render_period_selector,
+    selected_period,
     window_label,
 )
 
-st.set_page_config(
-    page_title="Branch Performance · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, mode = render_period_selector()
+start, end, label, mode = selected_period()
 prev_window = previous_period(start, end, mode)
 
 

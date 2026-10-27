@@ -18,16 +18,7 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from app import data, theme
-from app.filters import DATA_END, render_period_selector
-
-st.set_page_config(
-    page_title="Store Expansion · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-render_period_selector()  # shared control; this is an all-time coverage profile
+from app.filters import DATA_END  # sidebar period does not scope this page
 
 gap = data.q(
     """

@@ -23,18 +23,11 @@ from app.filters import (
     DATA_END,
     delta_label,
     previous_period,
-    render_period_selector,
+    selected_period,
     window_label,
 )
 
-st.set_page_config(
-    page_title="Returns & Quality · Cottonil",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-theme.apply_theme()
-
-start, end, label, mode = render_period_selector()
+start, end, label, mode = selected_period()
 prev_window = previous_period(start, end, mode)
 prev_label = window_label(prev_window, empty="no comparison window")
 _delta = partial(delta_label, label=prev_label)
