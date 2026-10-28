@@ -211,7 +211,7 @@ def _fab(at: AppTest):
 def test_assistant_defaults_after_a_plain_shell_run():
     at = _run_shell()
     # The dock starts closed with an empty conversation; state keys exist.
-    assert _fab(at).label == "Business Assistant"
+    assert _fab(at).label == "Business AI Assistant"
     assert at.session_state["assistant_open"] is False
     assert at.session_state["assistant_msgs"] == []
     assert at.session_state["assistant_pending"] is None
