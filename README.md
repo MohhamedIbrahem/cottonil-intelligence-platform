@@ -1,89 +1,168 @@
 # Cottonil Intelligence Platform
 
-> **HVIA Task 3** — A full-stack data foundation, 19 interactive dashboards, and a bilingual AI business assistant built on the Cottonil retail dataset (25 CSVs → DuckDB → Streamlit).
+> **HVIA Task 3** — An enterprise-grade data foundation, 16 domain dashboards across 6 navigation groups, econometric analytics, and a bilingual Business AI Assistant built on the Cottonil retail dataset (25 CSVs → DuckDB → Streamlit).
 
 ---
 
-## What We Built
+## 🎬 Demo Video
 
-### 🏗️ Data Foundation (Phase 1)
+[`docs/demo_final.mp4`](docs/demo_final.mp4) — a scripted walkthrough of the real running app: a title card, all **16 dashboards** (each with live sidebar navigation, render settle, and a smooth scroll-through), and the **Business AI Assistant** answering two real questions — one in English, one in Arabic — with SQL-grounded responses, sources, and result tables.
 
-- **25 raw CSV tables** ingested into a local **DuckDB** database (`data/cottonil.duckdb`) via a reproducible build pipeline.
-- **26 curated SQL views** (`pipeline/views/`) — numbered and applied in order — that transform raw data into analytics-ready datasets covering sales, branches, inventory, customers, supply chain, procurement, marketing, wholesale, demand, pricing, profitability, replenishment, CLV/churn, workforce, and store expansion.
-- **34 data-quality gates** (`uv run checks`): 27 FK/orphan integrity checks + 7 financial reconciliation checks that run before any dashboard renders.
-- Auto-generated **view contract catalog** ([`pipeline/VIEW_CATALOG.md`](pipeline/VIEW_CATALOG.md)) documenting every column, type, and source.
+*1920×1080 · 30 fps · H.264 + AAC · 2 min 49 s*
 
-### 📊 19 Interactive Dashboards (Phases 2–5)
+---
 
-Every dashboard is a Streamlit page registered under **6 navigation groups**, with a shared global reporting-period filter (same-window YoY comparison) and a unified design system (1,097 lines in [`app/theme.py`](app/theme.py)).
+## Architecture & What We Built
 
-| # | Dashboard | Key Features |
+```
+                          ┌────────────────────────┐
+                          │   25 Raw CSV Tables    │
+                          │   (~80 Branches, 85K   │
+                          │   Customers, 540K Tx)  │
+                          └───────────┬────────────┘
+                                      │ uv run build (pipeline.build_db)
+                                      ▼
+                          ┌────────────────────────┐
+                          │  Embedded DuckDB Store │
+                          │ (data/cottonil.duckdb) │
+                          └───────────┬────────────┘
+                                      │ Materialize Views
+                                      ▼
+                          ┌────────────────────────┐
+                          │  26 Curated SQL Views  │
+                          │   (pipeline/views/)    │
+                          └───────────┬────────────┘
+                                      │ uv run checks (34 DQ Gates)
+                                      ▼
+             ┌──────────────────────────────────────────────────┐
+             │       Cottonil Intelligence Shell (Home.py)      │
+             │   - Shared Period Filter (Same-Window YoY)       │
+             │   - Professional Design System (app/theme.py)    │
+             │   - Grouped Navigation (app/navigation.py)       │
+             └─────────────┬──────────────────────┬─────────────┘
+                           │                      │
+                           ▼                      ▼
+        ┌────────────────────────────┐  ┌───────────────────────────────────┐
+        │  16 Domain Dashboards      │  │    Business AI Assistant          │
+        │  Across 6 Business Groups  │  │  - Floating Docked Bubble (FAB)   │
+        │  - Overview                │  │  - NL → SQL Pipeline (Read-Only)  │
+        │  - Sales & Channels        │  │  - Gemini + Groq Provider Chain   │
+        │  - Products & Pricing      │  │  - EN/AR Language Matching        │
+        │  - Supply & Operations     │  │  - Idempotent Event Queueing      │
+        │  - Customers               │  │  - Matched Dashboard Deep Links   │
+        │  - Organization & Growth   │  └───────────────────────────────────┘
+        └─────────────┬──────────────┘
+                      ▼
+        ┌────────────────────────────┐
+        │ Econometric Models         │
+        │ (app/analytics.py)         │
+        │ - Holt-Winters Forecast    │
+        │ - 2-Way Fixed Elasticity   │
+        │ - Temporal Churn Holdout   │
+        └────────────────────────────┘
+```
+
+---
+
+## Key Platform Capabilities
+
+### 1. 🏗️ Data Foundation & Automated Pipeline
+- **25 Relational Tables** loaded into an embedded, high-performance **DuckDB** database (`data/cottonil.duckdb`) with strict typed schemas (Dates, BigInt IDs, Double monetary metrics).
+- **26 Curated Analytical Views** (`pipeline/views/`) materialized in dependency order, isolating raw ingestion from UI presentation.
+- **34 Data Quality Gates** (`uv run checks`):
+  - **27 Foreign Key & Orphan Checks**: Verifies zero orphaned orders, payments, shipments, inventory transfers, and items.
+  - **7 Financial Reconciliation Checks**: Verifies strict balance across gross sales, discounts, net sales, returns, and payments.
+- **Automated Data Contracts**: Full column-level definitions documented in [`pipeline/VIEW_CATALOG.md`](pipeline/VIEW_CATALOG.md).
+
+### 2. 📊 16 Enterprise Dashboards (6 Navigation Groups)
+Registered in [`app/navigation.py`](app/navigation.py) with unified date-window filtering, same-window YoY comparison, and export capabilities:
+
+| Group | Dashboard | File | Key Features |
+|---|---|---|---|
+| **Overview** | **Executive Overview** | `1_Executive_Overview.py` | Macro KPI strip (Revenue, Gross Margin, AOV, Volume) with YoY deltas, monthly trajectory, top-5 branch share, governorate breakdown, channel distribution. |
+| **Sales & Channels** | **Sales Performance** | `2_Sales_Performance.py` | Category-filterable sales trends, top-15 volume products, items-per-order, order value metrics. |
+| | **Branch Performance** | `3_Branch_Performance.py` | Branch performance ranking, revenue vs. growth scatter quadrant, governorate expansion analysis. |
+| | **Wholesale & Distributors** | `11_Wholesale.py` | B2B distributor volume, channel trends, client account recency and customer concentration metrics. |
+| | **Omnichannel (Lite)** | `14_Omnichannel.py` | Performance across retail branches, e-commerce, and wholesale; cross-channel customer overlaps. |
+| | **Marketing ROI** | `10_Marketing_ROI.py` | Channel attribution, ad spend efficiency, CAC, ROAS, CPA, and campaign budget utilization. |
+| **Products & Pricing** | **Product Profitability** | `15_Product_Profitability.py` | SKU-level gross margins, margin distribution curves, low-margin outlier warnings, top revenue drivers. |
+| | **Price & Promotion** | `13_Price_Promotion.py` | Discount depth analysis, margin interaction, promotional lift, and price elasticity estimates. |
+| | **Demand Forecast** | `12_Demand_Forecast.py` | Category-level unit demand, 6-month predictive horizon, rolling-origin WAPE error tracking, empirical risk bounds. |
+| **Supply & Operations**| **Inventory & Stock** | `4_Inventory_Stock.py` | Current stock coverage days, warehouse-to-store distribution, stock-out risk buckets, **Smart Replenishment tab** (45-day cover rule, priority reorder). |
+| | **Supply Chain & Logistics** | `7_Supply_Chain.py` | Delivery on-time rates, transit delays, logistics partner performance, warehouse transfer pipeline. |
+| | **Procurement & Suppliers**| `8_Procurement.py` | Supplier lead-time distribution, on-time delivery scorecards, purchase order execution rates. |
+| | **Returns & Quality** | `9_Returns_Quality.py` | Return rate trends, return reasons breakdown, category-specific defect/return concentrations. |
+| **Customers** | **Customer Intelligence** | `5_Customer_Intelligence.py` | RFM customer segmentation, top-tier VIP accounts, geographic distribution, **CLV & Churn tab** (historical LTV, churn risk holdout). |
+| **Organization** | **Workforce Productivity** | `18_Workforce_Productivity.py` | Branch headcount, payroll-to-revenue ratios, labor efficiency trends (2023 reference period). |
+| | **Store Expansion** | `19_Expansion_Gap.py` | Branch density vs. governorate population and customer demand, expansion opportunity scoring. |
+
+### 3. 🤖 Business AI Assistant
+Built into a floating widget docked on every dashboard page (`app/assistant_widget.py`) with backend intelligence in `assistant/`:
+
+- **Natural Language to SQL**: Translates English and Arabic questions into strict read-only SQL queries executed directly against the curated views.
+- **Provider Fallback Chain**:
+  - **Primary**: Google **Gemini** (`gemini-2.0-flash` or `gemini-2.5-flash`)
+  - **Fallback**: **Groq** (`llama-3.3-70b-versatile`), activated automatically upon quota exhaustion or timeouts.
+- **Enterprise Guard-Rails**:
+  - AST-based SQL validation ensuring single-statement `SELECT`/`WITH` statements only.
+  - Whitelist enforcement restricting access exclusively to analytical views (`views.*`).
+  - Strict timeout bounds and query cancellation (`con.interrupt()`).
+- **Prompt Injection Defense & Refusal Handling**: Classifies and cleanly refuses out-of-domain or malicious queries in both English and Arabic.
+- **Submission Idempotency**: Event-driven form handling preventing duplicate submission reruns.
+- **Language Detection & Matching**: Explicitly detects question language to prevent cross-language responses when viewing Arabic schema names.
+- **Modern User Experience**:
+  - Modern gradient Floating Action Button (FAB) docked on every dashboard.
+  - Live provider status indicator (`● Online · ask about sales, stock & customers`).
+  - Scrollable fixed-height conversation history with full EN/AR rendering.
+  - Collapsible result table viewer (`st.dataframe`).
+  - 1-click deep-link navigation directly to relevant dashboards.
+  - One-click copy/export to Markdown.
+
+### 4. 📈 Statistical & Econometric Models (`app/analytics.py`)
+- **Holt-Winters Exponential Smoothing**: Additive damped trend with multiplicative seasonality for multi-month demand forecasting (`statsmodels.tsa.holtwinters`).
+- **Two-Way Fixed Effects Price Elasticity**: Panel regression controlling for SKU and monthly fixed effects with clustered standard errors.
+- **Temporal-Holdout Churn Classifier**: Out-of-time evaluation verifying customer reorder behavior and churn predictability.
+
+### 5. 🎨 Design System (`app/theme.py`)
+- Light theme engineered for high contrast (WCAG AA compliant: 15.9:1 text contrast).
+- Corporate Cottonil brand navy identity (`#17365D`) paired with coordinated categorical chart colors (blue, teal, violet, amber, rose, green, red).
+- Custom global Plotly template unifying all interactive charts.
+- Standardized KPI cards with color-coded sentiment tone strips.
+
+---
+
+## Test Suite & Quality Gates
+
+The codebase includes 6 comprehensive automated test suites:
+
+```powershell
+uv run pytest -v
+```
+
+| Suite | File | Focus Area |
 |---|---|---|
-| 1 | **Executive Overview** | Period KPIs with YoY, monthly trend, top-5 branches, governorate share, category/channel mix |
-| 2 | **Sales Performance** | Category-filterable trend, top-15 products, AOV/items-per-order cards |
-| 3 | **Branch & Governorate** | Growth-colored ranking, quadrant scatter, governorate growth bar |
-| 4 | **Inventory & Stock** | Latest-month snapshot vs period trend, status buckets, risk alerts |
-| 5 | **Customer Intelligence** | RFM tier table, top-LTV customers, profile mixes, customer lookup |
-| 6 | **Supply Chain & Logistics** | Shipment status/delayed rate, carrier comparison, destination governorates, transfer pipeline |
-| 7 | **Procurement & Suppliers** | Supplier scorecard, lead times, on-time proxy, material mix |
-| 8 | **Returns & Quality** | Return-rate trend, reason mix, capped refunds, category and governorate analysis |
-| 9 | **Marketing ROI** | Spend, CTR, ROAS, CPA, budget utilization, channel comparison (rebuilt attribution) |
-| 10 | **Wholesale & Distributors** | Wholesale channel trend, B2B account value, recency and concentration |
-| 11 | **Demand Forecast** | Category demand, 6-month Holt-Winters forecast, rolling-origin WAPE, empirical planning band |
-| 12 | **Price & Promotion** | Discount depth, margin link, within-SKU price-response test |
-| 13 | **Omnichannel (Lite)** | Three real channels, mix, AOV, margin, returns, cross-channel customers |
-| 14 | **Product Profitability** | SKU-month margin distribution, low-margin review alerts, top products by gross profit |
-| 15 | **Smart Replenishment** | Latest-snapshot 45-day cover rule, reorder priorities, overstock review |
-| 16 | **CLV & Churn** | Historical gross-profit CLV, concentration, churn status, temporal churn holdout |
-| 17 | **Workforce Productivity (Lite)** | Payroll-covered headcount, labor cost ratio, branch payroll detail |
-| 18 | **Store Expansion (Gap Proxy)** | Governorate coverage intensity, resident demand vs branch POS |
-| 19 | **Data Explorer** | Ad-hoc view browser for all 26 curated views |
-
-### 🤖 AI Business Assistant (Phase 3)
-
-A **floating chat widget** (bottom-right FAB, available on every dashboard page) that answers business questions in **English and Arabic** using natural-language-to-SQL:
-
-- **Pipeline**: User question → schema-aware SQL generation → read-only execution on curated views → business narration
-- **Provider chain**: Google **Gemini** (primary) with automatic fallback to **Groq** on quota/rate-limit/outage
-- **Safety**: SQL guard-rails (read-only, view-only), prompt-injection defence, refusal classification for out-of-scope questions
-- **UX**: Conversation memory (last 4 exchanges), deep-link buttons to related dashboards, result tables, copy/export, truncation notices
-- **Submission idempotency**: One click/Enter → exactly one engine call, no duplicate answers on Streamlit reruns (regression-tested)
-- **Language matching**: Detects the user's language and responds in the same language, even when the underlying schema has Arabic column names
-
-### 🎨 Design System
-
-- **Brand navy palette** (`#17365D`) with a coordinated chart color family (blue, teal, violet, amber, rose, green, red)
-- **Plotly template** applied to all charts for consistent styling
-- **KPI cards** with tone strips (positive/negative/warning), status chips, page headers
-- **Sidebar branding** with Cottonil identity mark
-- **Responsive** mobile layout for the assistant panel
-
-### 🧪 Test Suite (6 test files)
-
-| Command | What it tests |
-|---|---|
-| `uv run pytest tests/test_pipeline.py` | Exact rowcounts, view integrity, anomaly caps, DQ gates |
-| `uv run pytest tests/test_analytics.py` | Forecast (Holt-Winters), price-elasticity, churn, RFM on synthetic + real data |
-| `uv run pytest tests/test_pages_smoke.py` | Every page × 3 period modes renders clean; navigation registry; assistant defaults |
-| `uv run pytest tests/test_pages_perf.py` | Every page < 3 s render time |
-| `uv run pytest tests/test_assistant.py` | SQL guard-rails, refusal tests, prompt injection, goldset mechanics + live 20-question evaluation (≥ 80% gate) |
-| `uv run pytest tests/test_assistant_idempotency.py` | One submission → one `engine.ask()` call; provider storms produce exactly one error bubble |
+| **Pipeline & Views** | `tests/test_pipeline.py` | Exact table row counts, view materialization, 0 foreign-key orphans, reconciliation math. |
+| **Econometric Models** | `tests/test_analytics.py` | Synthetic & real data verification of Holt-Winters, elasticity regression, and churn holdout. |
+| **Page Smoke Suite** | `tests/test_pages_smoke.py` | Headless render of all 16 dashboards across 3 period modes; navigation integrity. |
+| **Performance Gate** | `tests/test_pages_perf.py` | Enforces sub-3-second render budget for every single dashboard page. |
+| **Assistant Mechanics** | `tests/test_assistant.py` | SQL injection defense, schema constraints, refusal logic, and 20-question accuracy goldset. |
+| **Idempotency Gate** | `tests/test_assistant_idempotency.py` | Guarantees single-request queueing across simulated Streamlit reruns and provider outage resilience. |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Language | Python 3.12 |
-| Database | DuckDB (embedded, zero-config) |
-| Web framework | Streamlit (multipage app) |
-| Charting | Plotly |
-| AI / LLM | OpenAI-compatible API (Gemini + Groq) |
-| Forecasting | SciPy (Holt-Winters exponential smoothing) |
-| Package manager | uv |
-| Testing | pytest |
-| Linting | Ruff |
+| Component | Technology | Description |
+|---|---|---|
+| **Runtime** | Python 3.12+ | Core programming environment |
+| **Package Manager** | `uv` | High-speed dependency resolver and task runner |
+| **Database Engine** | DuckDB (>=1.1.0) | Embedded in-process columnar SQL OLAP database |
+| **Web UI** | Streamlit (>=1.37.0) | Interactive dashboard framework |
+| **Data Processing** | Pandas & PyArrow | High-throughput data frames and memory management |
+| **Visualizations** | Plotly (>=5.22.0) | Interactive charts with custom Cottonil theme |
+| **Econometrics** | Statsmodels & SciPy | Time-series forecasting and panel regression |
+| **LLM Orchestration**| OpenAI SDK | Universal client for Gemini and Groq API endpoints |
+| **Code Quality** | Ruff & Pytest | Strict linting, formatting, and automated testing |
 
 ---
 
@@ -91,104 +170,130 @@ A **floating chat widget** (bottom-right FAB, available on every dashboard page)
 
 ```
 Cottonil/
-├── app/                          # Streamlit application
-│   ├── Home.py                   # App shell: navigation, filters, assistant mount
-│   ├── assistant_widget.py       # Floating AI assistant chat panel
-│   ├── charts.py                 # Plotly chart helpers using theme tokens
-│   ├── filters.py                # Global period filter with YoY
-│   ├── kpi.py                    # KPI card rendering
-│   ├── navigation.py             # Page registry, nav groups, deep-link mapping
-│   ├── theme.py                  # Design system (1,097 lines)
-│   └── pages/                    # 19 dashboard pages
-│       ├── 1_Executive_Overview.py
-│       ├── 2_Sales_Performance.py
-│       ├── ...
-│       └── 19_Data_Explorer.py
-├── assistant/                    # AI assistant engine
-│   ├── engine.py                 # ask() → AskResult pipeline
-│   ├── env.py                    # Provider config from .env
-│   ├── llm.py                    # LLM client with fallback chain
-│   ├── prompts.py                # System prompts (SQL generation + narration)
-│   └── sql_exec.py               # Read-only SQL execution
-├── pipeline/                     # Data pipeline
-│   ├── build.py                  # CSV → DuckDB loader + view applicator
-│   ├── checks.py                 # 34 data-quality gates
-│   ├── connection.py             # DuckDB connection helper
-│   ├── VIEW_CATALOG.md           # Auto-generated view contract docs
-│   └── views/                    # 26 numbered SQL view definitions
-├── tests/                        # 6 test files
-├── docs/                         # PROJECT_PLAN, DATA_AUDIT, DASHBOARD_SCOPE_MATRIX
-├── specs/                        # Feature specifications (001-core-platform)
-├── data/                         # cottonil.duckdb (built, gitignored)
-├── COTTONIL/                     # Raw dataset (25 CSVs, gitignored)
-├── .streamlit/config.toml        # Streamlit theme configuration
-├── .env                          # API keys (gitignored)
-└── pyproject.toml                # Project config + dependencies
+├── app/                          # Streamlit application layer
+│   ├── Home.py                   # App entrypoint, shell configuration, and nav mounting
+│   ├── assistant_widget.py       # Floating Business AI Assistant widget & CSS
+│   ├── navigation.py             # 16-page registry & 6 business navigation groups
+│   ├── theme.py                  # 1,116-line design system (tokens, CSS, Plotly template)
+│   ├── filters.py                # Global period selector & YoY period math
+│   ├── analytics.py              # Statistical forecasting, elasticity, and churn models
+│   ├── data.py                   # Cached DuckDB query interface
+│   ├── pages/                    # 16 registered dashboard pages
+│   │   ├── 1_Executive_Overview.py
+│   │   ├── 2_Sales_Performance.py
+│   │   ├── 3_Branch_Performance.py
+│   │   ├── 4_Inventory_Stock.py
+│   │   ├── 5_Customer_Intelligence.py
+│   │   ├── 7_Supply_Chain.py
+│   │   ├── 8_Procurement.py
+│   │   ├── 9_Returns_Quality.py
+│   │   ├── 10_Marketing_ROI.py
+│   │   ├── 11_Wholesale.py
+│   │   ├── 12_Demand_Forecast.py
+│   │   ├── 13_Price_Promotion.py
+│   │   ├── 14_Omnichannel.py
+│   │   ├── 15_Product_Profitability.py
+│   │   ├── 18_Workforce_Productivity.py
+│   │   └── 19_Expansion_Gap.py
+├── assistant/                    # Business AI Assistant core
+│   ├── engine.py                 # Multi-step ask() pipeline (prompt -> SQL -> exec -> narrate)
+│   ├── sql_guard.py              # AST SQL parsing, read-only validation, table whitelisting
+│   ├── prompts.py                # System instructions, schema formatting, language detection
+│   ├── llm.py                    # Dual-provider client with automatic fallback
+│   ├── env.py                    # Provider configuration and timeout settings
+│   ├── schema_docs.py            # Automated view documentation injected into prompts
+│   └── goldset.py                # Benchmark question set for assistant evaluation
+├── pipeline/                     # ETL and analytical data pipeline
+│   ├── build_db.py               # Ingests 25 CSVs into DuckDB with typed schemas
+│   ├── checks.py                 # 34 automated data quality and reconciliation gates
+│   ├── views_loader.py           # Applies SQL views in sequence
+│   ├── config.py                 # File paths, table definitions, and constants
+│   ├── VIEW_CATALOG.md           # Catalog of materialized views and schema contracts
+│   └── views/                    # 26 SQL view migration files
+├── tests/                        # 6 Automated pytest suites
+├── docs/                         # Architecture docs, audits, project plans, demo video
+│   ├── demo_final.mp4            # Product demo walkthrough (1920×1080, H.264/AAC)
+│   ├── PROJECT_PLAN.md           # Master roadmap and feature scope
+│   ├── DATA_AUDIT.md             # Dataset anomalies, policies, and metric dictionary
+│   └── DASHBOARD_SCOPE_MATRIX.md # Mapping of concept deck to build order
+├── COTTONIL/                     # Source CSV dataset (gitignored)
+├── data/                         # Built DuckDB database files (gitignored)
+├── .streamlit/config.toml        # Streamlit server and light theme config
+├── pyproject.toml                # Project metadata, dependencies, and build scripts
+└── README.md                     # Project overview and runbook
 ```
 
 ---
 
-## Quickstart
+## Quickstart Guide
+
+### 1. Prerequisites & Installation
+Ensure Python 3.12+ and `uv` are installed:
 
 ```powershell
-# 1. Install dependencies
+# Clone the repository
+git clone https://github.com/MohhamedIbrahem/Cottonil.git
+cd Cottonil
+
+# Synchronize virtual environment and dependencies
 uv sync
-
-# 2. Build the database (loads 25 CSVs → DuckDB + applies 26 views)
-uv run build
-
-# 3. Run data quality checks
-uv run checks
-
-# 4. Run the full test suite
-uv run pytest
-
-# 5. Launch the dashboard
-uv run streamlit run app/Home.py
 ```
 
-### AI Assistant Setup
+### 2. Build the Data Layer
+Ingest the 25 CSV tables and compile the 26 analytical views into DuckDB:
 
-Add your API keys to `.env` (gitignored):
+```powershell
+# Build DuckDB database
+uv run build
+
+# Run 34 data quality & financial reconciliation checks
+uv run checks
+```
+
+### 3. Run Test Suite
+Verify that pipeline math, econometric models, and pages pass all gates:
+
+```powershell
+uv run pytest
+```
+
+### 4. Configure AI Assistant
+Create a `.env` file in the project root:
 
 ```env
-# Primary provider (Google Gemini)
-GEMINI_API_KEY=your-key-here
+# Primary LLM Provider (Google Gemini)
+GEMINI_API_KEY=your-gemini-api-key
 GEMINI_MODEL=gemini-2.0-flash
 
-# Fallback provider (Groq)
-GROQ_API_KEY=your-key-here
+# Fallback LLM Provider (Groq)
+GROQ_API_KEY=your-groq-api-key
 GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-The assistant auto-detects provider availability. If Gemini hits a rate limit or is unavailable, it falls back to Groq automatically (answers are captioned "via Groq (fallback)").
+### 5. Launch the Platform
+Start the multi-page Streamlit application:
+
+```powershell
+uv run streamlit run app/Home.py
+```
 
 ---
 
 ## Troubleshooting
 
-| Problem | Fix |
-|---|---|
-| `data/cottonil.duckdb not found` | Run `uv run build` first (requires CSVs under `COTTONIL/COTTONIL_Data/`) |
-| Assistant says "LLM is not reachable" | Verify `GEMINI_API_KEY` / `GROQ_API_KEY` in `.env`, reload the page |
-| Quota exhausted on Gemini | The chain falls back to Groq automatically |
-| File lock on rebuild (Windows) | Stop the Streamlit process, rebuild, restart |
+| Issue | Cause | Solution |
+|---|---|---|
+| `data/cottonil.duckdb not found` | The database has not been built yet. | Run `uv run build` to ingest CSVs and generate views. |
+| Assistant displays "LLM is not reachable" | Missing or invalid API key in `.env`. | Add valid `GEMINI_API_KEY` or `GROQ_API_KEY` to `.env` and reopen the panel. |
+| Primary quota limit hit (429) | Gemini API rate limit or quota exceeded. | The assistant automatically falls back to Groq without manual intervention. |
+| Database file lock on Windows | Rebuilding while Streamlit app is actively running. | Stop the Streamlit server process, run `uv run build`, and restart Streamlit. |
 
 ---
 
-## Documentation
+## Project Documentation Links
 
-| Document | Description |
-|---|---|
-| [`docs/PROJECT_PLAN.md`](docs/PROJECT_PLAN.md) | Master project plan (phases, scope, timeline) |
-| [`docs/DATA_AUDIT.md`](docs/DATA_AUDIT.md) | Dataset audit, metric dictionary, anomaly policies |
-| [`docs/DASHBOARD_SCOPE_MATRIX.md`](docs/DASHBOARD_SCOPE_MATRIX.md) | All 21 deck pages × data availability → build order |
-| [`pipeline/VIEW_CATALOG.md`](pipeline/VIEW_CATALOG.md) | Auto-generated view definitions and column contracts |
-| [`specs/001-core-platform/`](specs/001-core-platform/) | Feature spec, implementation plan, and task tracker |
-
----
-
-## Source of Truth
-
-- **Concept deck**: `COTTONIL/HVIA_TASK_3_COTTONIL_ALL_23_IMAGES.pdf` (23 pages) — design language only. Numbers in the deck are illustrative; the real dataset differs.
-- **Dataset**: `COTTONIL/COTTONIL_Data/` (25 CSVs, ~80 branches, ~85K customers, ~540K orders). Kept out of git (large); place it at that path before building.
+- **[Master Project Plan](docs/PROJECT_PLAN.md)**: Delivery phases, feature scope, and roadmap.
+- **[Data Audit & Metric Dictionary](docs/DATA_AUDIT.md)**: Dataset structure, reconciliation policies, and anomaly handling.
+- **[Dashboard Scope Matrix](docs/DASHBOARD_SCOPE_MATRIX.md)**: Complete mapping of the 23-page concept deck to implementation.
+- **[Curated View Catalog](pipeline/VIEW_CATALOG.md)**: Data schemas and column contracts for all 26 views.
+- **[Concept Deck Source]**: `COTTONIL/HVIA_TASK_3_COTTONIL_ALL_23_IMAGES.pdf` (design inspiration).
